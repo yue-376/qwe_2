@@ -496,11 +496,9 @@ void manager_menu(Database *db, const char *dataDir) {
         printf("\n========== 管理员菜单 ==========\n");
         printf("欢迎，%s\n", g_session.username);
         printf("1. 患者管理\n");
-        printf("2. 医生管理\n");
-        printf("3. 药品管理\n");
-        printf("4. 病房管理\n");
-        printf("5. 全院统计报表\n");
-        printf("6. 用户账号管理\n");
+        printf("2. 药品管理\n");
+        printf("3. 全院统计报表\n");
+        printf("4. 用户账号管理\n");
         printf("0. 登出并返回登录界面\n");
         printf("A. 导入数据文件\n");
         printf("请选择：");
@@ -539,16 +537,16 @@ void manager_menu(Database *db, const char *dataDir) {
         
         // 检查是否有非数字字符（除了末尾的换行符等）
         if (*endptr != '\0') {
-            printf("无效的选择，请输入 0-6 或 A。\n");
+            printf("无效的选择，请输入 0-4 或 A。\n");
             pause_and_wait();
             continue;
         }
         
         choice = (int)val;
         
-        // 验证输入是否为有效数字选项 (0-6)
-        if (choice < 0 || choice > 6) {
-            printf("无效的选择，请输入 0-6 或 A。\n");
+        // 验证输入是否为有效数字选项 (0-4)
+        if (choice < 0 || choice > 4) {
+            printf("无效的选择，请输入 0-4 或 A。\n");
             pause_and_wait();
             continue;
         }
@@ -558,21 +556,13 @@ void manager_menu(Database *db, const char *dataDir) {
                 patient_management_menu(db, dataDir); 
                 break;
             case 2: 
-                printf("医生管理功能开发中...\n");
-                pause_and_wait();
-                break;
-            case 3: 
                 drug_management_menu(db, dataDir); 
                 break;
-            case 4: 
-                printf("病房管理功能开发中...\n");
-                pause_and_wait();
-                break;
-            case 5: 
+            case 3: 
                 management_report(db); 
                 pause_and_wait(); 
                 break;
-            case 6:
+            case 4:
                 user_account_management_menu(db, dataDir);
                 break;
             case 0: 
