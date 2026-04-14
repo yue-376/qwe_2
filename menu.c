@@ -1,8 +1,414 @@
 #include "menu.h"
 #include "data.h"
+#include "auth.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
+
+/* ==================== 登录与注册功能 ==================== */
+
+/*
+ * 说明：注册菜单函数
+ * 参数：db 数据库指针
+ */
+void register_menu(Database *db) {
+    char username[32], password[64], confirm[64];
+    int roleChoice, linkedId = 0;
+    UserRole role;
+    
+    printf("\n=== 用户注册 ===\n");
+    
+    printf("请输入用户名：");
+    read_line("", username, sizeof(username));
+    if (strlen(username) == 0) {
+        printf("用户名不能为空。\n");
+        return;
+    }
+    
+    // 检查用户名是否已存在
+    if (find_account(db, username) != NULL) {
+        printf("用户名已存在。\n");
+        return;
+    }
+    
+    printf("请输入密码：");
+    read_line("", password, sizeof(password));
+    if (strlen(password) < 4) {
+        printf("密码长度至少为 4 位。\n");
+        return;
+    }
+    
+    printf("请确认密码：");
+    read_line("", confirm, sizeof(confirm));
+    if (strcmp(password, confirm) != 0) {
+        printf("两次输入的密码不一致。\n");
+        return;
+    }
+    
+    printf("\n选择角色：\n");
+    printf("1. 患者\n");
+    printf("2. 医生\n");
+    printf("3. 管理员\n");
+    roleChoice = read_int("请选择 (1-3): ", 1, 3);
+    
+    switch (roleChoice) {
+        case 1:
+            role = ROLE_PATIENT;
+            printf("请输入关联的病历号（没有可填 0）: ");
+            linkedId = read_int("", 0, 1000000);
+            break;
+        case 2:
+            role = ROLE_DOCTOR;
+            printf("请输入关联的医生工号: ");
+            linkedId = read_int("", 1, 1000000);
+            // 验证医生是否存在
+            if (!find_doctor(db, linkedId)) {
+                printf("警告：该工号对应的医生不存在，但仍可创建账号。\n");
+            }
+            break;
+        case 3:
+            role = ROLE_MANAGER;
+            linkedId = 0;
+            break;
+        default:
+            printf("无效的选择。\n");
+            return;
+    }
+    
+    if (create_account(db, username, password, role, linkedId)) {
+        save_accounts(db, "./accounts.txt");
+        printf("注册成功！您的角色是：%s\n", get_role_name(role));
+    } else {
+        printf("注册失败。\n");
+    }
+}
+
+/*
+ * 说明：登录菜单函数
+ * 参数：db 数据库指针
+ * 返回值：登录成功返回 1，失败返回 0
+ */
+int login_menu(Database *db) {
+    char username[32], password[64];
+    Account *acc;
+    
+    printf("\n=== 用户登录 ===\n");
+    
+    printf("请输入用户名：");
+    read_line("", username, sizeof(username));
+    
+    printf("请输入密码：");
+    read_line("", password, sizeof(password));
+    
+    acc = authenticate_user(db, username, password);
+    
+    if (acc) {
+        g_session.isLoggedIn = 1;
+        g_session.role = acc->role;
+        g_session.userId = acc->linkedId;
+        strncpy(g_session.username, acc->username, sizeof(g_session.username) - 1);
+        
+        printf("\n登录成功！欢迎您，%s (%s)\n", acc->username, get_role_name(acc->role));
+        return 1;
+    } else {
+        printf("用户名或密码错误。\n");
+        return 0;
+    }
+}
+
+/*
+ * 说明：登出菜单
+ */
+static void logout_menu(void) {
+    logout_user();
+    printf("已成功登出。\n");
+}
+
+/* ==================== 患者角色菜单 ==================== */
+
+/* 查看个人挂号记录 */
+static void patient_view_registrations(Database *db) {
+    Registration *r;
+    int found = 0;
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    printf("\n=== 我的挂号记录 ===\n");
+    for (r = db->registrations; r; r = r->next) {
+        if (r->patientId == g_session.userId) {
+            printf("[%d] %s %s 医生%d %s %s\n", r->id, r->date, r->dept, r->doctorId, r->type, r->status);
+            found = 1;
+        }
+    }
+    
+    if (!found) {
+        printf("暂无挂号记录。\n");
+    }
+}
+
+/* 查看个人检查记录 */
+static void patient_view_exams(Database *db) {
+    Exam *e;
+    int found = 0;
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    printf("\n=== 我的检查记录 ===\n");
+    for (e = db->exams; e; e = e->next) {
+        if (e->patientId == g_session.userId) {
+            printf("[%d] %s %s %.2f %s\n", e->id, e->code, e->itemName, e->fee, e->result);
+            found = 1;
+        }
+    }
+    
+    if (!found) {
+        printf("暂无检查记录。\n");
+    }
+}
+
+/* 查看个人住院记录 */
+static void patient_view_inpatients(Database *db) {
+    Inpatient *ip;
+    int found = 0;
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    printf("\n=== 我的住院记录 ===\n");
+    for (ip = db->inpatients; ip; ip = ip->next) {
+        if (ip->patientId == g_session.userId) {
+            printf("[%d] 病房%d 床位%d %s ~ %s 费用%.2f\n", 
+                   ip->id, ip->wardId, ip->bedNo, ip->admitDate, ip->expectedDischarge, ip->totalCost);
+            found = 1;
+        }
+    }
+    
+    if (!found) {
+        printf("暂无住院记录。\n");
+    }
+}
+
+/*
+ * 说明：患者角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void patient_menu(Database *db, const char *dataDir) {
+    int choice;
+    
+    while (1) {
+        printf("\n========== 患者服务菜单 ==========\n");
+        printf("欢迎，%s\n", g_session.username);
+        printf("1. 查看我的挂号记录\n");
+        printf("2. 查看我的检查记录\n");
+        printf("3. 查看我的住院记录\n");
+        printf("4. 修改个人信息\n");
+        printf("5. 登出\n");
+        printf("0. 返回登录选择\n");
+        printf("请选择：");
+        
+        choice = read_int("", 0, 5);
+        
+        switch (choice) {
+            case 1: patient_view_registrations(db); break;
+            case 2: patient_view_exams(db); break;
+            case 3: patient_view_inpatients(db); break;
+            case 4: 
+                printf("此功能开发中...\n"); 
+                break;
+            case 5: 
+                logout_menu(); 
+                return;
+            case 0: 
+                logout_menu();
+                return;
+        }
+    }
+}
+
+/* ==================== 医生角色菜单 ==================== */
+
+/* 查看医生的患者挂号 */
+static void doctor_view_patients(Database *db) {
+    Registration *r;
+    Patient *p;
+    int count = 0;
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_DOCTOR) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    printf("\n=== 我的患者列表 ===\n");
+    for (r = db->registrations; r; r = r->next) {
+        if (r->doctorId == g_session.userId) {
+            p = find_patient(db, r->patientId);
+            if (p) {
+                printf("[%d] %s %s %s %s %s\n", r->id, p->name, p->gender, r->date, r->dept, r->status);
+                count++;
+            }
+        }
+    }
+    
+    if (count == 0) {
+        printf("暂无患者挂号。\n");
+    } else {
+        printf("共 %d 条记录。\n", count);
+    }
+}
+
+/* 添加看诊记录 */
+static void doctor_add_visit(Database *db, const char *dataDir) {
+    int regId = 0;
+    int step = 0;
+    char diagnosis[TEXT_LEN], examItems[TEXT_LEN], prescription[TEXT_LEN];
+    Registration *r = NULL;
+    Visit *v;
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_DOCTOR) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    while (step < 4) {
+        int ok = 0;
+        if (step == 0) {
+            ok = read_int_or_back("挂号编号 (输入 0 返回上一步): ", 1, 1000000, &regId);
+            if (ok) {
+                r = find_registration(db, regId);
+                if (!r) { 
+                    printf("挂号记录不存在。\n"); 
+                    ok = 0; 
+                } else if (r->doctorId != g_session.userId) {
+                    printf("这不是您的挂号记录。\n");
+                    ok = 0;
+                }
+            }
+        } else if (step == 1) ok = read_line_or_back("诊断结果 (输入 0 返回上一步): ", diagnosis, sizeof(diagnosis));
+        else if (step == 2) ok = read_line_or_back("检查项目 (输入 0 返回上一步): ", examItems, sizeof(examItems));
+        else ok = read_line_or_back("处方信息 (输入 0 返回上一步): ", prescription, sizeof(prescription));
+
+        if (ok) step++;
+        else if (step == 0) { printf("已返回上一步。\n"); return; }
+        else { printf("已返回上一项输入。\n"); step--; }
+    }
+    v = (Visit*)malloc(sizeof(Visit));
+    v->id = next_visit_id(db);
+    v->regId = regId;
+    strcpy(v->diagnosis, diagnosis);
+    strcpy(v->examItems, examItems);
+    strcpy(v->prescription, prescription);
+    v->next = NULL;
+    if (!db->visits) db->visits = v; else { Visit *q = db->visits; while (q->next) q = q->next; q->next = v; }
+    strcpy(r->status, "已就诊");
+    save_all(db, dataDir);
+    printf("看诊记录已添加。\n");
+}
+
+/*
+ * 说明：医生角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void doctor_menu(Database *db, const char *dataDir) {
+    int choice;
+    
+    while (1) {
+        printf("\n========== 医生工作菜单 ==========\n");
+        printf("欢迎，%s\n", g_session.username);
+        printf("1. 查看我的患者\n");
+        printf("2. 添加看诊记录\n");
+        printf("3. 查看我的排班\n");
+        printf("4. 登出\n");
+        printf("0. 返回登录选择\n");
+        printf("请选择：");
+        
+        choice = read_int("", 0, 4);
+        
+        switch (choice) {
+            case 1: doctor_view_patients(db); break;
+            case 2: doctor_add_visit(db, dataDir); break;
+            case 3: 
+                printf("此功能开发中...\n"); 
+                break;
+            case 4: 
+                logout_menu(); 
+                return;
+            case 0: 
+                logout_menu();
+                return;
+        }
+    }
+}
+
+/* ==================== 管理员角色菜单 ==================== */
+
+/*
+ * 说明：管理员角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void manager_menu(Database *db, const char *dataDir) {
+    int choice;
+    
+    while (1) {
+        printf("\n========== 管理员菜单 ==========\n");
+        printf("欢迎，%s\n", g_session.username);
+        printf("1. 患者管理\n");
+        printf("2. 医生管理\n");
+        printf("3. 药品管理\n");
+        printf("4. 病房管理\n");
+        printf("5. 全院统计报表\n");
+        printf("6. 用户账号管理\n");
+        printf("7. 登出\n");
+        printf("0. 返回登录选择\n");
+        printf("请选择：");
+        
+        choice = read_int("", 0, 7);
+        
+        switch (choice) {
+            case 1: 
+                patient_management_menu(db, dataDir); 
+                break;
+            case 2: 
+                printf("医生管理功能开发中...\n");
+                pause_and_wait();
+                break;
+            case 3: 
+                drug_management_menu(db, dataDir); 
+                break;
+            case 4: 
+                printf("病房管理功能开发中...\n");
+                pause_and_wait();
+                break;
+            case 5: 
+                management_report(db); 
+                pause_and_wait(); 
+                break;
+            case 6:
+                printf("用户账号管理功能开发中...\n");
+                pause_and_wait();
+                break;
+            case 7: 
+                logout_menu(); 
+                return;
+            case 0: 
+                logout_menu();
+                return;
+        }
+    }
+}
 
 /* ==================== 辅助统计函数 ==================== */
 /* 统计患者总数 */
@@ -62,7 +468,7 @@ static int count_drugs(Database *db) {
  * 参数：size 缓冲区大小
  * 返回值：1 表示成功读取，0 表示用户选择返回
  */
-static int read_line_or_back(const char *prompt, char *buf, int size) {
+int read_line_or_back(const char *prompt, char *buf, int size) {
     read_line(prompt, buf, size);
     if (strcmp(buf, "0") == 0) {
         return 0;
@@ -126,7 +532,7 @@ static int read_phone_with_back(const char *prompt, char *buf, int size) {
  * 参数：out 输出参数，存储读取的整数值
  * 返回值：1 表示成功读取，0 表示用户选择返回
  */
-static int read_int_or_back(const char *prompt, int min, int max, int *out) {
+int read_int_or_back(const char *prompt, int min, int max, int *out) {
     char line[64];
     char *end;
     long value;
@@ -726,7 +1132,7 @@ static void inpatient_management_menu(Database *db, const char *dataDir) {
  * 参数：db 数据库指针
  * 参数：dataDir 数据文件目录
  */
-static void patient_management_menu(Database *db, const char *dataDir) {
+void patient_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
         printf("\n--- 患者管理 ---\n");
@@ -881,7 +1287,7 @@ static void delete_drug(Database *db, const char *dataDir) {
  * 参数：db 数据库指针
  * 参数：dataDir 数据文件目录
  */
-static void drug_management_menu(Database *db, const char *dataDir) {
+void drug_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
         printf("\n--- 药品管理 ---\n");
@@ -943,7 +1349,7 @@ static void doctor_report(Database *db) {
  * 说明：管理视角报表 - 显示全院运营数据统计
  * 参数：db 数据库指针
  */
-static void management_report(Database *db) {
+void management_report(Database *db) {
     Ward *w; Drug *d; Inpatient *ip; Exam *e;
     double wardRate, inpatientIncome = 0, examIncome = 0;
     int totalBeds = 0, usedBeds = 0;

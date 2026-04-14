@@ -84,4 +84,13 @@ int next_drug_id(Database *db);
 /* 生成下一个药品日志编号 */
 int next_druglog_id(Database *db);
 
+/* ==================== 账号数据保存函数 ==================== */
+
+/*
+ * 说明：保存账号数据到文件
+ * 参数：db 数据库指针
+ * 参数：path 文件路径
+ */
+void save_accounts(Database *db, const char *path);
+
 #endif
