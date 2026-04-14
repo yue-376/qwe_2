@@ -1,1 +1,7 @@
-Nothing should be ignored since only a source code file (`menu.c`) was modified and there are no build artifacts, dependencies, or temporary files in the changes.
+```
+# Compiled and build artifacts
+*.exe
+*.o
+*.obj
+*.out
+```

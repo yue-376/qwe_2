@@ -252,7 +252,7 @@ static int file_exists(const char *path)
  * 参数：dir 目录路径
  * 参数：name 文件名
  */
-static void path_join(char *out, size_t size, const char *dir, const char *name)
+void path_join(char *out, size_t size, const char *dir, const char *name)
 {
     snprintf(out, size, "%s/%s", dir, name);
 }
@@ -489,7 +489,7 @@ static void load_accounts(Database *db, const char *path)
  * 参数：db 数据库指针
  * 参数：path 文件路径
  */
-static void save_patients(Database *db, const char *path)
+void save_patients(Database *db, const char *path)
 {
     FILE *fp = fopen(path, "w");
     Patient *p;

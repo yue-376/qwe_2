@@ -93,4 +93,22 @@ int next_druglog_id(Database *db);
  */
 void save_accounts(Database *db, const char *path);
 
+/* ==================== 工具函数 ==================== */
+
+/*
+ * 说明：拼接目录路径和文件名
+ * 参数：out 输出缓冲区
+ * 参数：size 缓冲区大小
+ * 参数：dir 目录路径
+ * 参数：name 文件名
+ */
+void path_join(char *out, size_t size, const char *dir, const char *name);
+
+/*
+ * 说明：保存患者数据到文件
+ * 参数：db 数据库指针
+ * 参数：path 文件路径
+ */
+void save_patients(Database *db, const char *path);
+
 #endif
