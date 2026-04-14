@@ -1,1 +1,4 @@
+testuser3|1234|0|0
+testuser2|1234|0|0
+testuser|1234|0|0
 admin|123456|2|0

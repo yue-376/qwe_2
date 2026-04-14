@@ -34,18 +34,26 @@ void register_menu(Database *db) {
         return;
     }
     
-    printf("请输入密码：");
-    read_line("", password, sizeof(password));
-    if (strlen(password) < 4) {
-        printf("密码长度至少为 4 位。\n");
-        return;
-    }
-    
-    printf("请确认密码：");
-    read_line("", confirm, sizeof(confirm));
-    if (strcmp(password, confirm) != 0) {
-        printf("两次输入的密码不一致。\n");
-        return;
+    // 循环输入密码直到满足要求
+    while (1) {
+        printf("请输入密码（至少 4 位）：");
+        read_line("", password, sizeof(password));
+        if (strlen(password) < 4) {
+            printf("密码长度至少为 4 位，请重新输入。\n");
+            continue;
+        }
+        
+        // 循环确认密码直到一致
+        while (1) {
+            printf("请确认密码：");
+            read_line("", confirm, sizeof(confirm));
+            if (strcmp(password, confirm) != 0) {
+                printf("两次输入的密码不一致，请重新输入确认密码。\n");
+                continue;
+            }
+            break;
+        }
+        break;
     }
     
     printf("\n选择角色：\n");
@@ -108,8 +116,8 @@ int login_menu(Database *db) {
     
     if (choice == 2) {
         register_menu(db);
-        printf("\n注册成功后，请使用新账号登录。\n");
-        return 0;
+        // 注册成功后直接返回，让主程序重新调用 login_menu 回到选择界面
+        return -1;
     }
     
     printf("请输入用户名：");
