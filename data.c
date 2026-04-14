@@ -633,7 +633,7 @@ static void save_druglogs(Database *db, const char *path)
  * 参数：db 数据库指针
  * 参数：path 文件路径
  */
-static void save_accounts(Database *db, const char *path)
+void save_accounts(Database *db, const char *path)
 {
     FILE *fp = fopen(path, "w");
     Account *p;
