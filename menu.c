@@ -1657,3 +1657,182 @@ void main_menu(Database *db, const char *dataDir) {
         }
     }
 }
+
+/* ==================== 用户账号管理菜单 ==================== */
+void user_account_management_menu(Database *db, const char *dataDir)
+{
+    (void)dataDir;
+    if (!check_permission(ROLE_MANAGER))
+    {
+        printf("权限不足！\n");
+        pause_and_wait();
+        return;
+    }
+
+    while (1)
+    {
+        printf("\n\n============================================\n");
+        printf("         用户账号管理\n");
+        printf("============================================\n");
+        printf("1. 查看所有账号\n");
+        printf("2. 新增账号\n");
+        printf("3. 删除账号\n");
+        printf("4. 修改密码\n");
+        printf("0. 返回上级菜单\n");
+        printf("============================================\n");
+        printf("请选择：");
+
+        int choice;
+        if (scanf("%d", &choice) != 1)
+        {
+            while (getchar() != '\n');
+            continue;
+        }
+
+        switch (choice)
+        {
+            case 1:
+            {
+                printf("\n--- 所有账号列表 ---\n");
+                Account *acc = db->accounts;
+                if (!acc)
+                {
+                    printf("暂无账号记录。\n");
+                }
+                else
+                {
+                    printf("%-20s %-15s %-10s\n", "用户名", "角色", "关联ID");
+                    printf("--------------------------------------------\n");
+                    while (acc)
+                    {
+                        printf("%-20s %-15s %-10d\n", acc->username, get_role_name(acc->role), acc->linkedId);
+                        acc = acc->next;
+                    }
+                }
+                pause_and_wait();
+                break;
+            }
+            case 2:
+            {
+                char username[32], password[64];
+                int roleVal, linkedId;
+
+                printf("\n--- 新增账号 ---\n");
+                printf("用户名：");
+                scanf("%31s", username);
+
+                if (find_account(db, username))
+                {
+                    printf("错误：用户名已存在！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                printf("密码：");
+                scanf("%63s", password);
+
+                printf("角色（0-患者，1-医生，2-管理员）：");
+                if (scanf("%d", &roleVal) != 1 || roleVal < 0 || roleVal > 2)
+                {
+                    printf("无效的角色选择！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                printf("关联ID（患者病历号/医生工号/管理员填0）：");
+                if (scanf("%d", &linkedId) != 1)
+                {
+                    printf("无效的关联ID！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                if (create_account(db, username, password, (UserRole)roleVal, linkedId))
+                {
+                    printf("账号创建成功！\n");
+                    save_all(db, dataDir);
+                }
+                else
+                {
+                    printf("账号创建失败！\n");
+                }
+                pause_and_wait();
+                break;
+            }
+            case 3:
+            {
+                char username[32];
+                printf("\n--- 删除账号 ---\n");
+                printf("请输入要删除的用户名：");
+                scanf("%31s", username);
+
+                Account *acc = find_account(db, username);
+                if (!acc)
+                {
+                    printf("未找到该用户！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                // 不允许删除自己
+                if (strcmp(acc->username, g_session.username) == 0)
+                {
+                    printf("不能删除当前登录的账号！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                // 从链表中移除
+                if (db->accounts == acc)
+                {
+                    db->accounts = acc->next;
+                }
+                else
+                {
+                    Account *prev = db->accounts;
+                    while (prev && prev->next != acc)
+                        prev = prev->next;
+                    if (prev)
+                        prev->next = acc->next;
+                }
+                free_accounts(acc);
+                printf("账号 %s 已删除！\n", username);
+                save_all(db, dataDir);
+                pause_and_wait();
+                break;
+            }
+            case 4:
+            {
+                char username[32], newPassword[64];
+                printf("\n--- 修改密码 ---\n");
+                printf("请输入用户名：");
+                scanf("%31s", username);
+
+                Account *acc = find_account(db, username);
+                if (!acc)
+                {
+                    printf("未找到该用户！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                printf("请输入新密码：");
+                scanf("%63s", newPassword);
+
+                strncpy(acc->password, newPassword, sizeof(acc->password) - 1);
+                acc->password[sizeof(acc->password) - 1] = '\0';
+
+                printf("密码修改成功！\n");
+                save_all(db, dataDir);
+                pause_and_wait();
+                break;
+            }
+            case 0:
+                return;
+            default:
+                printf("无效选择！\n");
+                pause_and_wait();
+                break;
+        }
+    }
+}
