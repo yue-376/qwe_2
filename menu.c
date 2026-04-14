@@ -202,10 +202,11 @@ static void patient_view_inpatients(Database *db) {
 /*
  * 说明：患者角色菜单函数
  * 参数：db 数据库指针
- * 参数：dataDir 数据文件存储目录
+ * 参数：dataDir 数据文件存储目录（保留参数以保持一致性）
  */
 void patient_menu(Database *db, const char *dataDir) {
     int choice;
+    (void)dataDir; /* 未使用的参数，保留以保持接口一致性 */
     
     while (1) {
         printf("\n========== 患者服务菜单 ==========\n");
