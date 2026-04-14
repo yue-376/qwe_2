@@ -66,4 +66,47 @@ void manager_menu(Database *db, const char *dataDir);
  */
 void main_menu(Database *db, const char *dataDir);
 
+/* ==================== 输入辅助函数 ==================== */
+
+/*
+ * 说明：读取一行输入，支持输入"0"返回上一步
+ * 参数：prompt 提示信息
+ * 参数：buf 存储输入的缓冲区
+ * 参数：size 缓冲区大小
+ * 返回值：1 表示成功读取，0 表示用户选择返回
+ */
+int read_line_or_back(const char *prompt, char *buf, int size);
+
+/*
+ * 说明：读取整数输入并验证范围，支持输入"0"返回上一步
+ * 参数：prompt 提示信息
+ * 参数：min 最小值
+ * 参数：max 最大值
+ * 参数：out 输出参数，存储读取的整数值
+ * 返回值：1 表示成功读取，0 表示用户选择返回
+ */
+int read_int_or_back(const char *prompt, int min, int max, int *out);
+
+/* ==================== 管理功能菜单 ==================== */
+
+/*
+ * 说明：患者管理菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void patient_management_menu(Database *db, const char *dataDir);
+
+/*
+ * 说明：药品管理菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void drug_management_menu(Database *db, const char *dataDir);
+
+/*
+ * 说明：全院统计报表
+ * 参数：db 数据库指针
+ */
+void management_report(Database *db);
+
 #endif
