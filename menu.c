@@ -94,8 +94,23 @@ void register_menu(Database *db) {
 int login_menu(Database *db) {
     char username[32], password[64];
     Account *acc;
+    int choice;
     
     printf("\n=== 用户登录 ===\n");
+    printf("1. 登录\n");
+    printf("2. 注册新账号\n");
+    printf("0. 退出程序\n");
+    choice = read_int("请选择 (0-2): ", 0, 2);
+    
+    if (choice == 0) {
+        return 0;
+    }
+    
+    if (choice == 2) {
+        register_menu(db);
+        printf("\n注册成功后，请使用新账号登录。\n");
+        return 0;
+    }
     
     printf("请输入用户名：");
     read_line("", username, sizeof(username));
