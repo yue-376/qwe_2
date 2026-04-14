@@ -718,9 +718,9 @@ int save_all(Database *db, const char *dir)
     return 1;
 }
 
-/* 从指定的目录导入数据（合并到现有数据） */
+/* 从指定的目录导入数据（替换现有数据） */
 /*
- * 说明：从指定目录导入数据（合并到现有数据）
+ * 说明：从指定目录导入数据（替换现有数据）
  * 参数：db 数据库指针
  * 参数：dir 要导入的数据文件目录
  * 返回值：成功导入的文件数量
@@ -729,6 +729,28 @@ int import_all(Database *db, const char *dir)
 {
     char path[256];
     int count = 0;
+    
+    /* 先清空现有数据 */
+    free_patients(db->patients);
+    db->patients = NULL;
+    free_doctors(db->doctors);
+    db->doctors = NULL;
+    free_regs(db->registrations);
+    db->registrations = NULL;
+    free_visits(db->visits);
+    db->visits = NULL;
+    free_exams(db->exams);
+    db->exams = NULL;
+    free_wards(db->wards);
+    db->wards = NULL;
+    free_inpatients(db->inpatients);
+    db->inpatients = NULL;
+    free_drugs(db->drugs);
+    db->drugs = NULL;
+    free_druglogs(db->drugLogs);
+    db->drugLogs = NULL;
+    free_accounts(db->accounts);
+    db->accounts = NULL;
     
     path_join(path, sizeof(path), dir, "patients.txt");
     if (file_exists(path))

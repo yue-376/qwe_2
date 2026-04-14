@@ -341,6 +341,38 @@ void init_database(Database *db);
  */
 void free_database(Database *db);
 
+/* ==================== 内部辅助函数（用于导入数据时清空现有数据）==================== */
+
+/* 释放患者链表所有节点 */
+void free_patients(Patient *head);
+
+/* 释放医生链表所有节点 */
+void free_doctors(Doctor *head);
+
+/* 释放挂号记录链表所有节点 */
+void free_regs(Registration *head);
+
+/* 释放看诊记录链表所有节点 */
+void free_visits(Visit *head);
+
+/* 释放检查记录链表所有节点 */
+void free_exams(Exam *head);
+
+/* 释放病房链表所有节点 */
+void free_wards(Ward *head);
+
+/* 释放住院记录链表所有节点 */
+void free_inpatients(Inpatient *head);
+
+/* 释放药品链表所有节点 */
+void free_drugs(Drug *head);
+
+/* 释放药品日志链表所有节点 */
+void free_druglogs(DrugLog *head);
+
+/* 释放账号链表所有节点 */
+void free_accounts(Account *head);
+
 /* ==================== 查找函数 ==================== */
 
 /*

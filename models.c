@@ -13,7 +13,7 @@
  * 说明：释放患者链表所有节点
  * 参数：head 患者链表头指针
  */
-static void free_patients(Patient *head)
+void free_patients(Patient *head)
 {
     while (head)
     {
@@ -27,7 +27,7 @@ static void free_patients(Patient *head)
  * 说明：释放医生链表所有节点
  * 参数：head 医生链表头指针
  */
-static void free_doctors(Doctor *head)
+void free_doctors(Doctor *head)
 {
     while (head)
     {
@@ -41,7 +41,7 @@ static void free_doctors(Doctor *head)
  * 说明：释放挂号记录链表所有节点
  * 参数：head 挂号记录链表头指针
  */
-static void free_regs(Registration *head)
+void free_regs(Registration *head)
 {
     while (head)
     {
@@ -55,7 +55,7 @@ static void free_regs(Registration *head)
  * 说明：释放看诊记录链表所有节点
  * 参数：head 看诊记录链表头指针
  */
-static void free_visits(Visit *head)
+void free_visits(Visit *head)
 {
     while (head)
     {
@@ -69,7 +69,7 @@ static void free_visits(Visit *head)
  * 说明：释放检查记录链表所有节点
  * 参数：head 检查记录链表头指针
  */
-static void free_exams(Exam *head)
+void free_exams(Exam *head)
 {
     while (head)
     {
@@ -83,7 +83,7 @@ static void free_exams(Exam *head)
  * 说明：释放病房链表所有节点
  * 参数：head 病房链表头指针
  */
-static void free_wards(Ward *head)
+void free_wards(Ward *head)
 {
     while (head)
     {
@@ -97,7 +97,7 @@ static void free_wards(Ward *head)
  * 说明：释放住院记录链表所有节点
  * 参数：head 住院记录链表头指针
  */
-static void free_inpatients(Inpatient *head)
+void free_inpatients(Inpatient *head)
 {
     while (head)
     {
@@ -111,7 +111,7 @@ static void free_inpatients(Inpatient *head)
  * 说明：释放药品链表所有节点
  * 参数：head 药品链表头指针
  */
-static void free_drugs(Drug *head)
+void free_drugs(Drug *head)
 {
     while (head)
     {
@@ -125,7 +125,7 @@ static void free_drugs(Drug *head)
  * 说明：释放药品日志链表所有节点
  * 参数：head 药品日志链表头指针
  */
-static void free_druglogs(DrugLog *head)
+void free_druglogs(DrugLog *head)
 {
     while (head)
     {
@@ -139,7 +139,7 @@ static void free_druglogs(DrugLog *head)
  * 说明：释放账号链表所有节点
  * 参数：head 账号链表头指针
  */
-static void free_accounts(Account *head)
+void free_accounts(Account *head)
 {
     while (head)
     {

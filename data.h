@@ -31,7 +31,7 @@ int load_all(Database *db, const char *dir);
 int save_all(Database *db, const char *dir);
 
 /*
- * 说明：从指定目录导入数据（合并到现有数据）
+ * 说明：从指定目录导入数据（替换现有数据）
  * 参数：db 数据库指针
  * 参数：dir 要导入的数据文件目录
  * 返回值：成功导入的文件数量
