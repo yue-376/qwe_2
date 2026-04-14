@@ -109,4 +109,11 @@ void drug_management_menu(Database *db, const char *dataDir);
  */
 void management_report(Database *db);
 
+/*
+ * 说明：用户账号管理菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void user_account_management_menu(Database *db, const char *dataDir);
+
 #endif

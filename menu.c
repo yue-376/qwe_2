@@ -467,18 +467,14 @@ void doctor_menu(Database *db, const char *dataDir) {
         printf("欢迎，%s\n", g_session.username);
         printf("1. 查看我的患者\n");
         printf("2. 添加看诊记录\n");
-        printf("3. 查看我的排班\n");
         printf("0. 登出并返回登录界面\n");
         printf("请选择：");
         
-        choice = read_int("", 0, 3);
+        choice = read_int("", 0, 2);
         
         switch (choice) {
             case 1: doctor_view_patients(db); break;
             case 2: doctor_add_visit(db, dataDir); break;
-            case 3: 
-                printf("此功能开发中...\n"); 
-                break;
             case 0: 
                 logout_menu();
                 return;
@@ -577,8 +573,7 @@ void manager_menu(Database *db, const char *dataDir) {
                 pause_and_wait(); 
                 break;
             case 6:
-                printf("用户账号管理功能开发中...\n");
-                pause_and_wait();
+                user_account_management_menu(db, dataDir);
                 break;
             case 0: 
                 logout_menu();
