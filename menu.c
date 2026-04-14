@@ -1,6 +1,10 @@
 #include "menu.h"
-
 #include "data.h"
+
+/* ==================== 全局登录会话 ==================== */
+UserSession g_session = {0, ROLE_PATIENT, 0, ""};
+
+/* ==================== 辅助统计函数 ==================== */
 /* 统计患者总数 */
 static int count_patients(Database *db) {
     int c = 0;

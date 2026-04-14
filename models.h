@@ -22,6 +22,60 @@
 
 #include "common.h"
 
+/* ==================== 用户账号与角色定义 ==================== */
+
+/*
+ * 枚举：UserRole
+ * 说明：用户角色枚举
+ * 
+ * - ROLE_PATIENT: 患者角色
+ * - ROLE_DOCTOR: 医生角色
+ * - ROLE_MANAGER: 管理员角色
+ */
+typedef enum { 
+    ROLE_PATIENT = 0, 
+    ROLE_DOCTOR = 1, 
+    ROLE_MANAGER = 2 
+} UserRole;
+
+/*
+ * 结构体：Account
+ * 说明：用户账号结构体
+ * 
+ * 字段说明：
+ * - username: 用户名（唯一标识）
+ * - password: 密码（加密存储）
+ * - role: 用户角色
+ * - linkedId: 关联ID（患者病历号/医生工号/管理员填0）
+ * - next: 指向下一个账号的指针（链表结构）
+ */
+typedef struct Account {
+    char username[32];
+    char password[64];
+    UserRole role;
+    int linkedId;  // 患者病历号/医生工号/管理员填0
+    struct Account *next;
+} Account;
+
+/*
+ * 结构体：UserSession
+ * 说明：用户登录会话结构体
+ * 
+ * 字段说明：
+ * - isLoggedIn: 是否已登录
+ * - role: 当前登录用户的角色
+ * - userId: 当前登录用户的关联ID
+ * - username: 当前登录用户的用户名
+ */
+typedef struct {
+    int isLoggedIn;
+    UserRole role;
+    int userId;    // 当前登录用户的关联ID
+    char username[32];
+} UserSession;
+
+/* ==================== 数据模型定义 ==================== */
+
 /*
  * 结构体：Patient
  * 说明：患者信息结构体
@@ -255,6 +309,7 @@ typedef struct DrugLog
  * - inpatients 住院记录链表头指针
  * - drugs 药品链表头指针
  * - drugLogs 药品日志链表头指针
+ * - accounts 账号链表头指针
  */
 typedef struct Database
 {
@@ -267,6 +322,7 @@ typedef struct Database
     Inpatient *inpatients;      /* 住院记录链表头 */
     Drug *drugs;                /* 药品链表头 */
     DrugLog *drugLogs;          /* 药品日志链表头 */
+    Account *accounts;          /* 账号链表头 */
 } Database;
 
 /* ==================== 数据库管理函数 ==================== */
@@ -347,6 +403,43 @@ int next_inpatient_id(Database *db);
 int next_drug_id(Database *db);
 /* 生成下一个药品日志编号 */
 int next_druglog_id(Database *db);
+
+/* ==================== 账号管理函数 ==================== */
+
+/*
+ * 说明：根据用户名查找账号
+ * 参数：db 数据库指针
+ * 参数：username 用户名
+ * 返回值：找到的账号指针，未找到返回 NULL
+ */
+Account *find_account(Database *db, const char *username);
+
+/*
+ * 说明：验证用户登录
+ * 参数：db 数据库指针
+ * 参数：username 用户名
+ * 参数：password 密码
+ * 返回值：登录成功返回账号指针，失败返回 NULL
+ */
+Account *authenticate_user(Database *db, const char *username, const char *password);
+
+/*
+ * 说明：创建新账号
+ * 参数：db 数据库指针
+ * 参数：username 用户名
+ * 参数：password 密码
+ * 参数：role 角色
+ * 参数：linkedId 关联 ID
+ * 返回值：1 表示成功，0 表示失败
+ */
+int create_account(Database *db, const char *username, const char *password, UserRole role, int linkedId);
+
+/*
+ * 说明：获取角色名称字符串
+ * 参数：role 角色枚举
+ * 返回值：角色名称字符串
+ */
+const char *get_role_name(UserRole role);
 
 /* ==================== 数据加载/保存函数 ==================== */
 

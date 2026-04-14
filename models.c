@@ -136,6 +136,20 @@ static void free_druglogs(DrugLog *head)
 }
 
 /*
+ * 说明：释放账号链表所有节点
+ * 参数：head 账号链表头指针
+ */
+static void free_accounts(Account *head)
+{
+    while (head)
+    {
+        Account *t = head;
+        head = head->next;
+        free(t);
+    }
+}
+
+/*
  * 说明：初始化数据库结构
  * 参数：db 数据库指针
  * 
@@ -153,6 +167,7 @@ void init_database(Database *db)
     db->inpatients = NULL;
     db->drugs = NULL;
     db->drugLogs = NULL;
+    db->accounts = NULL;
 }
 
 /*
@@ -173,5 +188,92 @@ void free_database(Database *db)
     free_inpatients(db->inpatients);
     free_drugs(db->drugs);
     free_druglogs(db->drugLogs);
+    free_accounts(db->accounts);
     init_database(db);  /* 重置为初始状态 */
+}
+
+/* ==================== 账号管理函数实现 ==================== */
+
+/*
+ * 说明：根据用户名查找账号
+ */
+Account *find_account(Database *db, const char *username)
+{
+    Account *curr = db->accounts;
+    while (curr)
+    {
+        if (strcmp(curr->username, username) == 0)
+        {
+            return curr;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+/*
+ * 说明：验证用户登录
+ */
+Account *authenticate_user(Database *db, const char *username, const char *password)
+{
+    Account *acc = find_account(db, username);
+    if (acc && strcmp(acc->password, password) == 0)
+    {
+        return acc;
+    }
+    return NULL;
+}
+
+/*
+ * 说明：创建新账号
+ */
+int create_account(Database *db, const char *username, const char *password, UserRole role, int linkedId)
+{
+    // 检查用户名是否已存在
+    if (find_account(db, username) != NULL)
+    {
+        return 0;  // 用户名已存在
+    }
+    
+    // 分配新账号内存
+    Account *newAcc = (Account *)malloc(sizeof(Account));
+    if (!newAcc)
+    {
+        return 0;  // 内存分配失败
+    }
+    
+    // 初始化账号信息
+    strncpy(newAcc->username, username, sizeof(newAcc->username) - 1);
+    newAcc->username[sizeof(newAcc->username) - 1] = '\0';
+    
+    strncpy(newAcc->password, password, sizeof(newAcc->password) - 1);
+    newAcc->password[sizeof(newAcc->password) - 1] = '\0';
+    
+    newAcc->role = role;
+    newAcc->linkedId = linkedId;
+    newAcc->next = NULL;
+    
+    // 插入到账号链表头部
+    newAcc->next = db->accounts;
+    db->accounts = newAcc;
+    
+    return 1;  // 创建成功
+}
+
+/*
+ * 说明：获取角色名称字符串
+ */
+const char *get_role_name(UserRole role)
+{
+    switch (role)
+    {
+        case ROLE_PATIENT:
+            return "患者";
+        case ROLE_DOCTOR:
+            return "医生";
+        case ROLE_MANAGER:
+            return "管理员";
+        default:
+            return "未知角色";
+    }
 }

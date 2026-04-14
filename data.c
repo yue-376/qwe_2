@@ -120,7 +120,6 @@ static void append_drug(Database *db, Drug *node)
         p->next = node;
     }
 }
-/* 将药品节点追加到药品链表末尾 */
 /* 将药品出入库日志节点追加到日志链表末尾 */
 static void append_druglog(Database *db, DrugLog *node)
 {
@@ -130,6 +129,21 @@ static void append_druglog(Database *db, DrugLog *node)
     else
     {
         DrugLog *p = db->drugLogs;
+        while (p->next)
+            p = p->next;
+        p->next = node;
+    }
+}
+
+/* 将账号节点追加到账号链表末尾 */
+static void append_account(Database *db, Account *node)
+{
+    node->next = NULL;
+    if (!db->accounts)
+        db->accounts = node;
+    else
+    {
+        Account *p = db->accounts;
         while (p->next)
             p = p->next;
         p->next = node;
@@ -441,6 +455,34 @@ static void load_druglogs(Database *db, const char *path)
     fclose(fp);
 }
 
+/* 从文件加载账号数据到数据库 */
+/*
+ * 说明：从文件加载账号数据到数据库
+ * 参数：db 数据库指针
+ * 参数：path 文件路径
+ */
+static void load_accounts(Database *db, const char *path)
+{
+    FILE *fp = fopen(path, "r");
+    char line[MAX_LINE];
+    if (!fp)
+        return;
+    while (fgets(line, sizeof(line), fp))
+    {
+        Account *p = (Account *)malloc(sizeof(Account));
+        int roleVal;
+        // 格式：username|password|role|linkedId
+        if (sscanf(line, "%31[^|]|%63[^|]|%d|%d", p->username, p->password, &roleVal, &p->linkedId) == 4)
+        {
+            p->role = (UserRole)roleVal;
+            append_account(db, p);
+        }
+        else
+            free(p);
+    }
+    fclose(fp);
+}
+
 /* 保存患者数据到文件 */
 /*
  * 说明：保存患者数据到文件
@@ -585,6 +627,23 @@ static void save_druglogs(Database *db, const char *path)
     fclose(fp);
 }
 
+/* 保存账号数据到文件 */
+/*
+ * 说明：保存账号数据到文件
+ * 参数：db 数据库指针
+ * 参数：path 文件路径
+ */
+static void save_accounts(Database *db, const char *path)
+{
+    FILE *fp = fopen(path, "w");
+    Account *p;
+    if (!fp)
+        return;
+    for (p = db->accounts; p; p = p->next)
+        fprintf(fp, "%s|%s|%d|%d\n", p->username, p->password, p->role, p->linkedId);
+    fclose(fp);
+}
+
 /*
  * 说明：从指定目录加载所有数据文件到数据库
  * 参数：db 数据库指针
@@ -621,6 +680,9 @@ int load_all(Database *db, const char *dir)
     path_join(path, sizeof(path), dir, "druglogs.txt");
     if (file_exists(path))
         load_druglogs(db, path);
+    path_join(path, sizeof(path), dir, "accounts.txt");
+    if (file_exists(path))
+        load_accounts(db, path);
     return 1;
 }
 
@@ -651,6 +713,8 @@ int save_all(Database *db, const char *dir)
     save_drugs(db, path);
     path_join(path, sizeof(path), dir, "druglogs.txt");
     save_druglogs(db, path);
+    path_join(path, sizeof(path), dir, "accounts.txt");
+    save_accounts(db, path);
     return 1;
 }
 
@@ -718,6 +782,12 @@ int import_all(Database *db, const char *dir)
     if (file_exists(path))
     {
         load_druglogs(db, path);
+        count++;
+    }
+    path_join(path, sizeof(path), dir, "accounts.txt");
+    if (file_exists(path))
+    {
+        load_accounts(db, path);
         count++;
     }
     
