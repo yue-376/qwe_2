@@ -42,7 +42,14 @@ int main(void)
     const char *dataDir = "."; // 数据文件存储目录，"."表示当前目录
     init_database(&db);       // 初始化数据库，将所有链表指针设为 NULL
     load_all(&db, dataDir);   // 从数据文件加载所有记录到内存
-    main_menu(&db, dataDir);  // 进入主菜单，处理用户交互操作
+    
+    /* 先执行登录流程，登录成功后才进入主菜单 */
+    if (login_menu(&db)) {
+        main_menu(&db, dataDir);  // 进入主菜单，处理用户交互操作
+    } else {
+        printf("登录失败，程序退出。\n");
+    }
+    
     free_database(&db);       // 释放所有动态分配的内存
     return 0;
 }
