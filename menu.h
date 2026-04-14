@@ -21,12 +21,48 @@
 #include "models.h"
 
 /*
+ * 说明：全局登录会话
+ */
+extern UserSession g_session;
+
+/*
+ * 说明：登录菜单函数
+ * 参数：db 数据库指针
+ * 返回值：登录成功返回 1，失败返回 0
+ */
+int login_menu(Database *db);
+
+/*
+ * 说明：注册菜单函数
+ * 参数：db 数据库指针
+ */
+void register_menu(Database *db);
+
+/*
+ * 说明：患者角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void patient_menu(Database *db, const char *dataDir);
+
+/*
+ * 说明：医生角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void doctor_menu(Database *db, const char *dataDir);
+
+/*
+ * 说明：管理员角色菜单函数
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void manager_menu(Database *db, const char *dataDir);
+
+/*
  * 说明：主菜单函数
  * 参数：db 数据库指针
  * 参数：dataDir 数据文件存储目录
- * 
- * 显示主菜单，循环等待用户输入选择，根据选择调用相应的子菜单或功能函数
- * 用户选择退出时，保存所有数据并返回
  */
 void main_menu(Database *db, const char *dataDir);
 
