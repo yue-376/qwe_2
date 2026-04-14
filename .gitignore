@@ -1,6 +1,5 @@
 ```
-# Compiled/Binary files
-*.exe
+# Compiled files
 *.o
 *.obj
 *.out
@@ -24,7 +23,7 @@ target/
 *.swo
 *.tmp
 
-# System/Environment files
+# System files
 .DS_Store
 Thumbs.db
 .env
