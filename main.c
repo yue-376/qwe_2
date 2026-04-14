@@ -45,7 +45,21 @@ int main(void)
     
     /* 先执行登录流程，登录成功后才进入主菜单 */
     if (login_menu(&db)) {
-        main_menu(&db, dataDir);  // 进入主菜单，处理用户交互操作
+        /* 根据用户角色进入不同的菜单界面 */
+        switch (g_session.role) {
+            case ROLE_PATIENT:
+                patient_menu(&db, dataDir);
+                break;
+            case ROLE_DOCTOR:
+                doctor_menu(&db, dataDir);
+                break;
+            case ROLE_MANAGER:
+                manager_menu(&db, dataDir);
+                break;
+            default:
+                main_menu(&db, dataDir);  //  fallback to main menu for unknown roles
+                break;
+        }
     } else {
         printf("登录失败，程序退出。\n");
     }
