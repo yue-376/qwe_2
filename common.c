@@ -214,6 +214,7 @@ int read_line_with_validate(const char *prompt, char *buf, int size,
  * 返回值：有效的整数值
  * 
  * 循环读取直到用户输入有效的整数（在 min~max 范围内）
+ * 如果输入无效，提示用户并继续等待输入，不会退出程序
  */
 int read_int(const char *prompt, int min, int max)
 {
@@ -223,6 +224,10 @@ int read_int(const char *prompt, int min, int max)
     while (1)
     {
         read_line(prompt, line, sizeof(line));
+        if (strlen(line) == 0) {
+            printf("输入不能为空，请输入 %d ~ %d 的整数。\n", min, max);
+            continue;
+        }
         value = strtol(line, &end, 10);
         if (*line != '\0' && *end == '\0' && value >= min && value <= max)
         {
