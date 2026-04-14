@@ -220,6 +220,127 @@ static void patient_view_inpatients(Database *db) {
     }
 }
 
+/* 修改个人基本信息 */
+static void patient_edit_profile(Database *db, const char *dataDir) {
+    Patient *p;
+    char newName[NAME_LEN], newGender[16], newBirth[DATE_LEN], newPhone[PHONE_LEN], newInsurance[SMALL_LEN];
+    
+    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
+        printf("权限不足。\n");
+        return;
+    }
+    
+    /* 查找当前登录患者的信息 */
+    p = find_patient(db, g_session.userId);
+    if (!p) {
+        printf("未找到您的患者档案。\n");
+        return;
+    }
+    
+    printf("\n=== 修改个人信息 ===\n");
+    printf("当前信息：\n");
+    printf("  姓名：%s\n", p->name);
+    printf("  性别：%s\n", p->gender);
+    printf("  出生日期：%s\n", p->birth);
+    printf("  联系电话：%s\n", p->phone);
+    printf("  医保类型：%s\n", p->insurance);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改姓名 */
+    printf("姓名 [%s]: ", p->name);
+    read_line("", newName, sizeof(newName));
+    if (strcmp(newName, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newName) > 0) {
+        safe_copy(p->name, newName, sizeof(p->name));
+    }
+    
+    /* 修改性别 */
+    printf("性别 [%s]: ", p->gender);
+    read_line("", newGender, sizeof(newGender));
+    if (strcmp(newGender, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newGender) > 0) {
+        if (strcmp(newGender, "男") != 0 && strcmp(newGender, "女") != 0) {
+            printf("性别必须为\"男\"或\"女\"，已保持原值。\n");
+        } else {
+            safe_copy(p->gender, newGender, sizeof(p->gender));
+        }
+    }
+    
+    /* 修改出生日期 */
+    printf("出生日期 [%s]: ", p->birth);
+    read_line("", newBirth, sizeof(newBirth));
+    if (strcmp(newBirth, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newBirth) > 0) {
+        /* 简单验证日期格式 YYYY-MM-DD */
+        if (strlen(newBirth) == 10 && newBirth[4] == '-' && newBirth[7] == '-') {
+            safe_copy(p->birth, newBirth, sizeof(p->birth));
+        } else {
+            printf("日期格式应为 YYYY-MM-DD，已保持原值。\n");
+        }
+    }
+    
+    /* 修改联系电话 */
+    printf("联系电话 [%s]: ", p->phone);
+    read_line("", newPhone, sizeof(newPhone));
+    if (strcmp(newPhone, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newPhone) > 0) {
+        /* 验证手机号格式（11 位数字） */
+        int valid = 1;
+        if (strlen(newPhone) != 11) {
+            valid = 0;
+        } else {
+            for (int i = 0; i < 11; i++) {
+                if (!isdigit(newPhone[i])) {
+                    valid = 0;
+                    break;
+                }
+            }
+        }
+        if (valid) {
+            safe_copy(p->phone, newPhone, sizeof(p->phone));
+        } else {
+            printf("手机号应为 11 位数字，已保持原值。\n");
+        }
+    }
+    
+    /* 修改医保类型 */
+    printf("医保类型 [%s]: ", p->insurance);
+    read_line("", newInsurance, sizeof(newInsurance));
+    if (strcmp(newInsurance, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newInsurance) > 0) {
+        safe_copy(p->insurance, newInsurance, sizeof(p->insurance));
+    }
+    
+    /* 保存修改到文件 */
+    char path[256];
+    path_join(path, sizeof(path), dataDir, "patients.txt");
+    save_patients(db, path);
+    
+    printf("\n个人信息修改成功！\n");
+    printf("更新后的信息：\n");
+    printf("  姓名：%s\n", p->name);
+    printf("  性别：%s\n", p->gender);
+    printf("  出生日期：%s\n", p->birth);
+    printf("  联系电话：%s\n", p->phone);
+    printf("  医保类型：%s\n", p->insurance);
+}
+
 /*
  * 说明：患者角色菜单函数
  * 参数：db 数据库指针
@@ -227,7 +348,6 @@ static void patient_view_inpatients(Database *db) {
  */
 void patient_menu(Database *db, const char *dataDir) {
     int choice;
-    (void)dataDir; /* 未使用的参数，保留以保持接口一致性 */
     
     while (1) {
         printf("\n========== 患者服务菜单 ==========\n");
@@ -246,7 +366,7 @@ void patient_menu(Database *db, const char *dataDir) {
             case 2: patient_view_exams(db); break;
             case 3: patient_view_inpatients(db); break;
             case 4: 
-                printf("此功能开发中...\n"); 
+                patient_edit_profile(db, dataDir); 
                 break;
             case 0: 
                 logout_menu();
