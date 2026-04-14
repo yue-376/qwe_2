@@ -66,6 +66,35 @@ int main(void)
                 main_menu(&db, dataDir);  //  fallback to main menu for unknown roles
                 break;
         }
+        
+        // 用户从角色菜单返回（选择"返回登录选择"）后，重新进入登录流程
+        while (1) {
+            loginResult = login_menu(&db);
+            while (loginResult == -1) {
+                loginResult = login_menu(&db);
+            }
+            
+            if (loginResult == 0) {
+                // 用户选择退出程序
+                break;
+            }
+            
+            // 根据用户角色进入不同的菜单界面
+            switch (g_session.role) {
+                case ROLE_PATIENT:
+                    patient_menu(&db, dataDir);
+                    break;
+                case ROLE_DOCTOR:
+                    doctor_menu(&db, dataDir);
+                    break;
+                case ROLE_MANAGER:
+                    manager_menu(&db, dataDir);
+                    break;
+                default:
+                    main_menu(&db, dataDir);
+                    break;
+            }
+        }
     } else {
         // 用户选择退出程序时不显示登录失败信息
     }
