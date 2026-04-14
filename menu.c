@@ -138,16 +138,22 @@ int login_menu(Database *db) {
         return 1;
     } else {
         printf("用户名或密码错误。\n");
-        return 0;
+        // 登录失败时不退出，返回 -1 让调用者重新显示登录菜单
+        return -1;
     }
 }
 
 /*
  * 说明：登出菜单
+ * 参数：return_to_login 是否返回登录界面，1 表示返回，0 表示不返回
  */
-static void logout_menu(void) {
+static void logout_menu(int return_to_login) {
     logout_user();
-    printf("已成功登出。\n");
+    if (return_to_login) {
+        printf("已返回登录界面。\n");
+    } else {
+        printf("已成功登出。\n");
+    }
 }
 
 /* ==================== 患者角色菜单 ==================== */
@@ -252,10 +258,10 @@ void patient_menu(Database *db, const char *dataDir) {
                 printf("此功能开发中...\n"); 
                 break;
             case 5: 
-                logout_menu(); 
+                logout_menu(0); 
                 return;
             case 0: 
-                logout_menu();
+                logout_menu(1);
                 return;
         }
     }
@@ -367,10 +373,10 @@ void doctor_menu(Database *db, const char *dataDir) {
                 printf("此功能开发中...\n"); 
                 break;
             case 4: 
-                logout_menu(); 
+                logout_menu(0); 
                 return;
             case 0: 
-                logout_menu();
+                logout_menu(1);
                 return;
         }
     }
@@ -450,10 +456,10 @@ void manager_menu(Database *db, const char *dataDir) {
                 pause_and_wait();
                 break;
             case 7: 
-                logout_menu(); 
+                logout_menu(0); 
                 return;
             case 0: 
-                logout_menu();
+                logout_menu(1);
                 return;
         }
     }
