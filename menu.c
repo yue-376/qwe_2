@@ -422,6 +422,13 @@ void manager_menu(Database *db, const char *dataDir) {
         
         choice = atoi(input);
         
+        // 验证输入是否为有效数字选项 (0-6)
+        if (choice < 0 || choice > 6) {
+            printf("无效的选择，请输入 0-6 或 A。\n");
+            pause_and_wait();
+            continue;
+        }
+        
         switch (choice) {
             case 1: 
                 patient_management_menu(db, dataDir); 
@@ -1505,6 +1512,14 @@ void main_menu(Database *db, const char *dataDir) {
         }
         
         choice = atoi(input);
+        
+        // 验证输入是否为有效数字选项 (0-9)
+        if (choice < 0 || choice > 9) {
+            printf("无效的选择，请输入 0-9 或 A。\n");
+            pause_and_wait();
+            continue;
+        }
+        
         switch (choice) {
             case 1: patient_management_menu(db, dataDir); break;
             case 2: registration_management_menu(db, dataDir); break;
