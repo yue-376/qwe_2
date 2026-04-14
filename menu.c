@@ -420,7 +420,18 @@ void manager_menu(Database *db, const char *dataDir) {
             continue;
         }
         
-        choice = atoi(input);
+        // 先验证输入是否为纯数字
+        char *endptr;
+        long val = strtol(input, &endptr, 10);
+        
+        // 检查是否有非数字字符（除了末尾的换行符等）
+        if (*endptr != '\0') {
+            printf("无效的选择，请输入 0-6 或 A。\n");
+            pause_and_wait();
+            continue;
+        }
+        
+        choice = (int)val;
         
         // 验证输入是否为有效数字选项 (0-6)
         if (choice < 0 || choice > 6) {
