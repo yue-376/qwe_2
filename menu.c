@@ -389,9 +389,34 @@ void manager_menu(Database *db, const char *dataDir) {
         printf("6. 用户账号管理\n");
         printf("7. 登出\n");
         printf("0. 返回登录选择\n");
+        printf("A. 导入数据文件\n");
         printf("请选择：");
         
-        choice = read_int("", 0, 7);
+        char input[32];
+        read_line("", input, sizeof(input));
+        
+        if (strcmp(input, "A") == 0 || strcmp(input, "a") == 0) {
+            char importDir[256];
+            printf("请输入要导入的数据文件所在目录：");
+            read_line("", importDir, sizeof(importDir));
+            
+            if (strlen(importDir) > 0) {
+                int count = import_all(db, importDir);
+                if (count > 0) {
+                    printf("成功从 %s 导入了 %d 个数据文件。\n", importDir, count);
+                    save_all(db, dataDir);
+                    printf("数据已合并保存到当前数据库。\n");
+                } else {
+                    printf("未找到任何数据文件，请检查目录路径。\n");
+                }
+            } else {
+                printf("取消导入操作。\n");
+            }
+            pause_and_wait();
+            continue;
+        }
+        
+        choice = atoi(input);
         
         switch (choice) {
             case 1: 
