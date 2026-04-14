@@ -44,7 +44,13 @@ int main(void)
     load_all(&db, dataDir);   // 从数据文件加载所有记录到内存
     
     /* 先执行登录流程，登录成功后才进入主菜单 */
-    if (login_menu(&db)) {
+    int loginResult = login_menu(&db);
+    while (loginResult == -1) {
+        // 注册成功后重新回到登录选择界面
+        loginResult = login_menu(&db);
+    }
+    
+    if (loginResult) {
         /* 根据用户角色进入不同的菜单界面 */
         switch (g_session.role) {
             case ROLE_PATIENT:
@@ -61,7 +67,7 @@ int main(void)
                 break;
         }
     } else {
-        printf("登录失败，程序退出。\n");
+        // 用户选择退出程序时不显示登录失败信息
     }
     
     free_database(&db);       // 释放所有动态分配的内存
