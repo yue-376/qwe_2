@@ -43,15 +43,12 @@ void register_menu(Database *db) {
             continue;
         }
         
-        // 循环确认密码直到一致
-        while (1) {
-            printf("请确认密码：");
-            read_line("", confirm, sizeof(confirm));
-            if (strcmp(password, confirm) != 0) {
-                printf("两次输入的密码不一致，请重新输入确认密码。\n");
-                continue;
-            }
-            break;
+        // 确认密码
+        printf("请确认密码：");
+        read_line("", confirm, sizeof(confirm));
+        if (strcmp(password, confirm) != 0) {
+            printf("两次输入的密码不一致，请重新输入密码。\n");
+            continue;  // 返回到重新输入密码的步骤
         }
         break;
     }
