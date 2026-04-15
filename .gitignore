@@ -1,1 +1,5 @@
-Nothing needs to be added to the .gitignore file since only a source code file (menu.c) was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+```
+# Compiled and build artifacts
+*.o
+*.obj
+```
