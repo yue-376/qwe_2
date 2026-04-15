@@ -272,7 +272,7 @@ static void load_patients(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         Patient *p = (Patient *)malloc(sizeof(Patient));
-        if (sscanf(line, "%d|%63[^|]|%15[^|]|%15[^|]|%31[^|]|%31[^|]|%d", &p->id, p->name, p->gender, p->birth, p->phone, p->insurance, &p->archived) == 7)
+        if (sscanf(line, "%d|%63[^|]|%15[^|]|%16[^|]|%31[^|]|%31[^|]|%d", &p->id, p->name, p->gender, p->birth, p->phone, p->insurance, &p->archived) == 7)
             append_patient(db, p);
         else
             free(p);
@@ -315,7 +315,7 @@ static void load_regs(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         Registration *p = (Registration *)malloc(sizeof(Registration));
-        if (sscanf(line, "%d|%d|%d|%31[^|]|%15[^|]|%31[^|]|%31[^\n]", &p->id, &p->patientId, &p->doctorId, p->dept, p->date, p->type, p->status) == 7)
+        if (sscanf(line, "%d|%d|%d|%31[^|]|%16[^|]|%31[^|]|%31[^\n]", &p->id, &p->patientId, &p->doctorId, p->dept, p->date, p->type, p->status) == 7)
             append_reg(db, p);
         else
             free(p);
@@ -359,7 +359,7 @@ static void load_exams(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         Exam *p = (Exam *)malloc(sizeof(Exam));
-        if (sscanf(line, "%d|%d|%d|%31[^|]|%63[^|]|%15[^|]|%lf|%255[^\n]", &p->id, &p->patientId, &p->doctorId, p->code, p->itemName, p->execTime, &p->fee, p->result) == 8)
+        if (sscanf(line, "%d|%d|%d|%31[^|]|%63[^|]|%16[^|]|%lf|%255[^\n]", &p->id, &p->patientId, &p->doctorId, p->code, p->itemName, p->execTime, &p->fee, p->result) == 8)
             append_exam(db, p);
         else
             free(p);
@@ -403,7 +403,7 @@ static void load_inpatients(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         Inpatient *p = (Inpatient *)malloc(sizeof(Inpatient));
-        if (sscanf(line, "%d|%d|%d|%d|%15[^|]|%15[^|]|%lf", &p->id, &p->patientId, &p->wardId, &p->bedNo, p->admitDate, p->expectedDischarge, &p->totalCost) == 7)
+        if (sscanf(line, "%d|%d|%d|%d|%16[^|]|%16[^|]|%lf", &p->id, &p->patientId, &p->wardId, &p->bedNo, p->admitDate, p->expectedDischarge, &p->totalCost) == 7)
             append_inpatient(db, p);
         else
             free(p);
@@ -447,7 +447,7 @@ static void load_druglogs(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         DrugLog *p = (DrugLog *)malloc(sizeof(DrugLog));
-        if (sscanf(line, "%d|%d|%31[^|]|%d|%63[^|]|%15[^\n]", &p->id, &p->drugId, p->operation, &p->quantity, p->operatorName, p->date) == 6)
+        if (sscanf(line, "%d|%d|%31[^|]|%d|%63[^|]|%16[^\n]", &p->id, &p->drugId, p->operation, &p->quantity, p->operatorName, p->date) == 6)
             append_druglog(db, p);
         else
             free(p);
