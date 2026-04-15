@@ -699,6 +699,9 @@ void manager_menu(Database *db, const char *dataDir) {
             continue;
         }
         
+        // 将输入字符串转换为整数
+        choice = atoi(input);
+        
         // 验证输入是否为有效数字选项 (0-5)
         if (choice < 0 || choice > 5) {
             printf("无效的选择，请输入 0-5 或 A。\n");
@@ -1465,6 +1468,7 @@ void patient_management_menu(Database *db, const char *dataDir) {
     }
 }
 
+/* ==================== 档案管理菜单 ==================== */
 /*
  * 说明：档案管理子菜单
  * 参数：db 数据库指针
@@ -1474,16 +1478,16 @@ void archive_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
         printf("\n--- 档案管理 ---\n");
-        printf("1. 新增医生或患者档案\n");
-        printf("2. 删除档案\n");
-        printf("3. 修改档案\n");
+        printf("1. 新增档案（患者/医生）\n");
+        printf("2. 修改档案（患者/医生）\n");
+        printf("3. 删除档案（患者/医生）\n");
         printf("4. 关联账号\n");
         printf("0. 返回上级菜单\n");
         choice = read_int("请选择：", 0, 4);
         if (choice == 0) return;
         else if (choice == 1) add_archive(db, dataDir);
-        else if (choice == 2) delete_archive(db, dataDir);
-        else if (choice == 3) edit_archive(db, dataDir);
+        else if (choice == 2) edit_archive(db, dataDir);
+        else if (choice == 3) delete_archive(db, dataDir);
         else if (choice == 4) link_archive_to_account(db, dataDir);
         pause_and_wait();
     }
