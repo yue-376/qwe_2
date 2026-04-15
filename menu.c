@@ -2373,7 +2373,6 @@ static void link_archive_to_account(Database *db, const char *dataDir) {
     }
     
     save_all(db, dataDir);
-    pause_and_wait();
 }
 
 /*

@@ -1,24 +1,14 @@
 ```
-# Compiled and build artifacts
+# Compiled files
 *.o
 *.obj
-*.pyc
-*.class
-*.exe
-*.dll
-*.so
-*.a
 *.out
 
 # Dependencies
-node_modules/
-venv/
-.venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
-target/
-.gradle/
+*.pyc
+*.pyo
+*.pyd
 
 # Logs and temp files
 *.log
@@ -33,10 +23,14 @@ target/
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Build and distribution
-dist/
+# Build artifacts
 build/
-coverage/
-htmlcov/
+dist/
+target/
+*.so
+*.dll
+*.exe
 ```
