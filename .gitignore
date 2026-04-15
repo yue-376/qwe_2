@@ -1,7 +1,47 @@
 ```
-# Compiled and binary files
-*.exe
+# Executable/binary files
+his_test_final
+
+# Compiled files
 *.o
 *.obj
 *.out
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Build artifacts
+build/
+dist/
+target/
+*.so
+*.dll
+*.a
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
 ```

@@ -8,6 +8,12 @@
 /* ==================== 前向声明 ==================== */
 static void create_doctor_archive(Database *db, const char *dataDir);
 static void link_archive_to_account(Database *db, const char *dataDir);
+static void add_archive(Database *db, const char *dataDir);
+static void delete_archive(Database *db, const char *dataDir);
+static void edit_archive(Database *db, const char *dataDir);
+static void delete_doctor(Database *db, const char *dataDir);
+static void edit_patient(Database *db, const char *dataDir);
+static void edit_doctor(Database *db, const char *dataDir);
 
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
@@ -1468,19 +1474,17 @@ void archive_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
         printf("\n--- 档案管理 ---\n");
-        printf("1. 查看患者档案列表\n");
-        printf("2. 新增患者档案\n");
-        printf("3. 删除患者档案\n");
-        printf("4. 创建医生档案\n");
-        printf("5. 关联档案到账号\n");
+        printf("1. 新增医生或患者档案\n");
+        printf("2. 删除档案\n");
+        printf("3. 修改档案\n");
+        printf("4. 关联账号\n");
         printf("0. 返回上级菜单\n");
-        choice = read_int("请选择: ", 0, 5);
+        choice = read_int("请选择：", 0, 4);
         if (choice == 0) return;
-        if (choice == 1) list_patients(db);
-        else if (choice == 2) add_patient(db, dataDir);
-        else if (choice == 3) delete_patient(db, dataDir);
-        else if (choice == 4) create_doctor_archive(db, dataDir);
-        else if (choice == 5) link_archive_to_account(db, dataDir);
+        else if (choice == 1) add_archive(db, dataDir);
+        else if (choice == 2) delete_archive(db, dataDir);
+        else if (choice == 3) edit_archive(db, dataDir);
+        else if (choice == 4) link_archive_to_account(db, dataDir);
         pause_and_wait();
     }
 }
@@ -2134,4 +2138,302 @@ static void link_archive_to_account(Database *db, const char *dataDir) {
     
     save_all(db, dataDir);
     pause_and_wait();
+}
+
+/*
+ * 说明：新增医生或患者档案
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void add_archive(Database *db, const char *dataDir) {
+    int choice;
+    printf("\n--- 新增档案 ---\n");
+    printf("1. 新增患者档案\n");
+    printf("2. 新增医生档案\n");
+    printf("0. 返回上一步\n");
+    choice = read_int("请选择：", 0, 2);
+    
+    if (choice == 0) return;
+    else if (choice == 1) add_patient(db, dataDir);
+    else if (choice == 2) create_doctor_archive(db, dataDir);
+}
+
+/*
+ * 说明：删除档案（患者或医生）
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void delete_archive(Database *db, const char *dataDir) {
+    int choice;
+    printf("\n--- 删除档案 ---\n");
+    printf("1. 删除患者档案\n");
+    printf("2. 删除医生档案\n");
+    printf("0. 返回上一步\n");
+    choice = read_int("请选择：", 0, 2);
+    
+    if (choice == 0) return;
+    else if (choice == 1) delete_patient(db, dataDir);
+    else if (choice == 2) delete_doctor(db, dataDir);
+}
+
+/*
+ * 说明：修改档案（患者或医生）
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void edit_archive(Database *db, const char *dataDir) {
+    int choice;
+    printf("\n--- 修改档案 ---\n");
+    printf("1. 修改患者档案\n");
+    printf("2. 修改医生档案\n");
+    printf("0. 返回上一步\n");
+    choice = read_int("请选择：", 0, 2);
+    
+    if (choice == 0) return;
+    else if (choice == 1) edit_patient(db, dataDir);
+    else if (choice == 2) edit_doctor(db, dataDir);
+}
+
+/*
+ * 说明：删除医生档案
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void delete_doctor(Database *db, const char *dataDir) {
+    int id = read_int("要删除的医生工号 (输入 0 返回): ", 0, 1000000);
+    Doctor *prev = NULL;
+    Doctor *cur = db->doctors;
+    char confirm[16];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+
+    while (cur && cur->id != id) {
+        prev = cur;
+        cur = cur->next;
+    }
+
+    if (!cur) {
+        printf("医生不存在。\n");
+        return;
+    }
+
+    /* 检查医生是否有关联的挂号记录 */
+    Registration *r;
+    for (r = db->registrations; r; r = r->next) {
+        if (r->doctorId == id) {
+            printf("删除失败：该医生存在关联的挂号记录，请先处理关联数据。\n");
+            return;
+        }
+    }
+
+    printf("确认删除医生 [%d] %s ? (y/n): ", cur->id, cur->name);
+    read_line(NULL, confirm, sizeof(confirm));
+    if (!(confirm[0] == 'y' || confirm[0] == 'Y')) {
+        printf("已取消删除。\n");
+        return;
+    }
+
+    if (prev) prev->next = cur->next;
+    else db->doctors = cur->next;
+    free(cur);
+    save_all(db, dataDir);
+    printf("删除成功。\n");
+}
+
+/*
+ * 说明：修改患者档案
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void edit_patient(Database *db, const char *dataDir) {
+    int id = read_int("请输入要修改的患者病历号 (输入 0 返回): ", 0, 1000000);
+    Patient *p;
+    char newName[NAME_LEN], newGender[16], newBirth[DATE_LEN], newPhone[PHONE_LEN], newInsurance[SMALL_LEN];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+    
+    p = find_patient(db, id);
+    if (!p) {
+        printf("未找到该病历号对应的患者档案。\n");
+        return;
+    }
+    
+    printf("\n=== 修改患者档案 ===\n");
+    printf("当前信息：\n");
+    printf("  姓名：%s\n", p->name);
+    printf("  性别：%s\n", p->gender);
+    printf("  出生日期：%s\n", p->birth);
+    printf("  联系电话：%s\n", p->phone);
+    printf("  医保类型：%s\n", p->insurance);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改姓名 */
+    printf("姓名 [%s]: ", p->name);
+    read_line("", newName, sizeof(newName));
+    if (strcmp(newName, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newName) > 0) {
+        safe_copy(p->name, newName, sizeof(p->name));
+    }
+    
+    /* 修改性别 */
+    printf("性别 [%s]: ", p->gender);
+    read_line("", newGender, sizeof(newGender));
+    if (strcmp(newGender, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newGender) > 0) {
+        if (strcmp(newGender, "男") != 0 && strcmp(newGender, "女") != 0) {
+            printf("性别必须为\"男\"或\"女\"，已保持原值。\n");
+        } else {
+            safe_copy(p->gender, newGender, sizeof(p->gender));
+        }
+    }
+    
+    /* 修改出生日期 */
+    printf("出生日期 [%s]: ", p->birth);
+    read_line("", newBirth, sizeof(newBirth));
+    if (strcmp(newBirth, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newBirth) > 0) {
+        if (strlen(newBirth) == 10 && newBirth[4] == '-' && newBirth[7] == '-') {
+            safe_copy(p->birth, newBirth, sizeof(p->birth));
+        } else {
+            printf("日期格式应为 YYYY-MM-DD，已保持原值。\n");
+        }
+    }
+    
+    /* 修改联系电话 */
+    printf("联系电话 [%s]: ", p->phone);
+    read_line("", newPhone, sizeof(newPhone));
+    if (strcmp(newPhone, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newPhone) > 0) {
+        int valid = 1;
+        if (strlen(newPhone) != 11) {
+            valid = 0;
+        } else {
+            for (int i = 0; i < 11; i++) {
+                if (!isdigit(newPhone[i])) {
+                    valid = 0;
+                    break;
+                }
+            }
+        }
+        if (valid) {
+            safe_copy(p->phone, newPhone, sizeof(p->phone));
+        } else {
+            printf("手机号应为 11 位数字，已保持原值。\n");
+        }
+    }
+    
+    /* 修改医保类型 */
+    printf("医保类型 [%s]: ", p->insurance);
+    read_line("", newInsurance, sizeof(newInsurance));
+    if (strcmp(newInsurance, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newInsurance) > 0) {
+        safe_copy(p->insurance, newInsurance, sizeof(p->insurance));
+    }
+    
+    /* 保存修改到文件 */
+    save_all(db, dataDir);
+    
+    printf("\n患者档案修改成功！\n");
+    printf("更新后的信息：\n");
+    printf("  姓名：%s\n", p->name);
+    printf("  性别：%s\n", p->gender);
+    printf("  出生日期：%s\n", p->birth);
+    printf("  联系电话：%s\n", p->phone);
+    printf("  医保类型：%s\n", p->insurance);
+}
+
+/*
+ * 说明：修改医生档案
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void edit_doctor(Database *db, const char *dataDir) {
+    int id = read_int("请输入要修改的医生工号 (输入 0 返回): ", 0, 1000000);
+    Doctor *d;
+    char newName[NAME_LEN], newDept[SMALL_LEN], newTitle[SMALL_LEN];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+    
+    d = find_doctor(db, id);
+    if (!d) {
+        printf("未找到该工号对应的医生档案。\n");
+        return;
+    }
+    
+    printf("\n=== 修改医生档案 ===\n");
+    printf("当前信息：\n");
+    printf("  工号：%d\n", d->id);
+    printf("  姓名：%s\n", d->name);
+    printf("  科室：%s\n", d->dept);
+    printf("  职称：%s\n", d->title);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改姓名 */
+    printf("姓名 [%s]: ", d->name);
+    read_line("", newName, sizeof(newName));
+    if (strcmp(newName, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newName) > 0) {
+        safe_copy(d->name, newName, sizeof(d->name));
+    }
+    
+    /* 修改科室 */
+    printf("科室 [%s]: ", d->dept);
+    read_line("", newDept, sizeof(newDept));
+    if (strcmp(newDept, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newDept) > 0) {
+        safe_copy(d->dept, newDept, sizeof(d->dept));
+    }
+    
+    /* 修改职称 */
+    printf("职称 [%s]: ", d->title);
+    read_line("", newTitle, sizeof(newTitle));
+    if (strcmp(newTitle, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(newTitle) > 0) {
+        safe_copy(d->title, newTitle, sizeof(d->title));
+    }
+    
+    /* 保存修改到文件 */
+    save_all(db, dataDir);
+    
+    printf("\n医生档案修改成功！\n");
+    printf("更新后的信息：\n");
+    printf("  工号：%d\n", d->id);
+    printf("  姓名：%s\n", d->name);
+    printf("  科室：%s\n", d->dept);
+    printf("  职称：%s\n", d->title);
 }
