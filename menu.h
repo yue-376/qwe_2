@@ -116,4 +116,11 @@ void management_report(Database *db);
  */
 void user_account_management_menu(Database *db, const char *dataDir);
 
+/*
+ * 说明：档案管理菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件存储目录
+ */
+void archive_management_menu(Database *db, const char *dataDir);
+
 #endif
