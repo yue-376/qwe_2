@@ -5,6 +5,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* ==================== 前向声明 ==================== */
+static void create_doctor_archive(Database *db, const char *dataDir);
+static void link_archive_to_account(Database *db, const char *dataDir);
+
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
 
