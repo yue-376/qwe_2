@@ -2048,14 +2048,9 @@ static void create_doctor_archive(Database *db, const char *dataDir) {
     d->id = next_doctor_id(db);
     printf("自动生成的工号：%d\n", d->id);
     
-    printf("姓名：");
-    scanf("%31s", d->name);
-    
-    printf("科室：");
-    scanf("%31s", d->dept);
-    
-    printf("职称：");
-    scanf("%31s", d->title);
+    read_line("姓名：", d->name, sizeof(d->name));
+    read_line("科室：", d->dept, sizeof(d->dept));
+    read_line("职称：", d->title, sizeof(d->title));
     
     d->archived = 0;
     d->next = NULL;
@@ -2071,7 +2066,6 @@ static void create_doctor_archive(Database *db, const char *dataDir) {
     
     printf("医生档案创建成功！工号：%d\n", d->id);
     save_all(db, dataDir);
-    pause_and_wait();
 }
 
 /*
