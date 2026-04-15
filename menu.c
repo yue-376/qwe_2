@@ -1475,10 +1475,16 @@ void patient_management_menu(Database *db, const char *dataDir) {
     while (1) {
         printf("\n--- 患者管理 ---\n");
         printf("1. 查看患者列表\n");
+        printf("2. 新增患者\n");
+        printf("3. 删除患者\n");
+        printf("4. 修改患者\n");
         printf("0. 返回上级菜单\n");
-        choice = read_int("请选择: ", 0, 1);
+        choice = read_int("请选择: ", 0, 4);
         if (choice == 0) return;
         if (choice == 1) list_patients(db);
+        else if (choice == 2) add_patient(db, dataDir);
+        else if (choice == 3) delete_patient(db, dataDir);
+        else if (choice == 4) edit_patient(db, dataDir);
         pause_and_wait();
     }
 }
