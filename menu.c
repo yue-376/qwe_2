@@ -15,6 +15,9 @@ static void delete_doctor(Database *db, const char *dataDir);
 static void edit_patient(Database *db, const char *dataDir);
 static void edit_doctor(Database *db, const char *dataDir);
 static void exam_management_menu(Database *db, const char *dataDir);
+static void visit_management_menu(Database *db, const char *dataDir);
+static void edit_visit(Database *db, const char *dataDir);
+static void edit_exam(Database *db, const char *dataDir);
 
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
@@ -646,7 +649,7 @@ void doctor_menu(Database *db, const char *dataDir) {
         printf("\n========== 医生工作菜单 ==========\n");
         printf("欢迎，%s\n", g_session.username);
         printf("1. 查看我的患者\n");
-        printf("2. 添加看诊记录\n");
+        printf("2. 看诊记录管理\n");
         printf("3. 检查记录管理\n");
         printf("0. 登出并返回登录界面\n");
         printf("请选择：");
@@ -655,7 +658,7 @@ void doctor_menu(Database *db, const char *dataDir) {
         
         switch (choice) {
             case 1: doctor_view_patients(db); break;
-            case 2: doctor_add_visit(db, dataDir); break;
+            case 2: visit_management_menu(db, dataDir); break;
             case 3: exam_management_menu(db, dataDir); break;
             case 0: 
                 logout_menu();
@@ -1241,6 +1244,80 @@ static void delete_visit(Database *db, const char *dataDir) {
 }
 
 /*
+ * 说明：修改看诊记录
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 读取要修改的看诊编号
+ * 2. 查找看诊记录
+ * 3. 逐步修改诊断结果、检查项目、处方信息
+ */
+static void edit_visit(Database *db, const char *dataDir) {
+    int id = read_int("要修改的看诊编号 (输入 0 返回): ", 0, 1000000);
+    Visit *cur;
+    char diagnosis[TEXT_LEN], examItems[TEXT_LEN], prescription[TEXT_LEN];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+    
+    cur = db->visits;
+    while (cur && cur->id != id) {
+        cur = cur->next;
+    }
+    if (!cur) { 
+        printf("看诊记录不存在。\n"); 
+        return; 
+    }
+    
+    printf("\n=== 修改看诊记录 ===\n");
+    printf("当前信息：\n");
+    printf("  诊断结果：%s\n", cur->diagnosis);
+    printf("  检查项目：%s\n", cur->examItems);
+    printf("  处方信息：%s\n", cur->prescription);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改诊断结果 */
+    printf("诊断结果 [%s]: ", cur->diagnosis);
+    read_line("", diagnosis, sizeof(diagnosis));
+    if (strcmp(diagnosis, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(diagnosis) > 0) {
+        safe_copy(cur->diagnosis, diagnosis, sizeof(cur->diagnosis));
+    }
+    
+    /* 修改检查项目 */
+    printf("检查项目 [%s]: ", cur->examItems);
+    read_line("", examItems, sizeof(examItems));
+    if (strcmp(examItems, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(examItems) > 0) {
+        safe_copy(cur->examItems, examItems, sizeof(cur->examItems));
+    }
+    
+    /* 修改处方信息 */
+    printf("处方信息 [%s]: ", cur->prescription);
+    read_line("", prescription, sizeof(prescription));
+    if (strcmp(prescription, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(prescription) > 0) {
+        safe_copy(cur->prescription, prescription, sizeof(cur->prescription));
+    }
+    
+    save_all(db, dataDir);
+    printf("\n看诊记录修改成功！\n");
+}
+
+/*
  * 说明：添加检查记录
  * 参数：db 数据库指针
  * 参数：dataDir 数据文件目录
@@ -1304,6 +1381,142 @@ static void delete_exam(Database *db, const char *dataDir) {
     free(cur);
     save_all(db, dataDir);
     printf("删除成功。\n");
+}
+
+/*
+ * 说明：修改检查记录
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 读取要修改的检查编号
+ * 2. 查找检查记录
+ * 3. 逐步修改患者病历号、医生工号、检查编码、项目名称、执行时间、费用、结果
+ */
+static void edit_exam(Database *db, const char *dataDir) {
+    int id = read_int("要修改的检查编号 (输入 0 返回): ", 0, 1000000);
+    Exam *cur;
+    char buf[64];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+    
+    cur = db->exams;
+    while (cur && cur->id != id) {
+        cur = cur->next;
+    }
+    if (!cur) { 
+        printf("检查记录不存在。\n"); 
+        return; 
+    }
+    
+    printf("\n=== 修改检查记录 ===\n");
+    printf("当前信息：\n");
+    printf("  患者病历号：%d\n", cur->patientId);
+    printf("  医生工号：%d\n", cur->doctorId);
+    printf("  检查编码：%s\n", cur->code);
+    printf("  项目名称：%s\n", cur->itemName);
+    printf("  执行时间：%s\n", cur->execTime);
+    printf("  检查费用：%.2f\n", cur->fee);
+    printf("  检查结果：%s\n", cur->result);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改患者病历号 */
+    printf("患者病历号 [%d]: ", cur->patientId);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        int newPid = atoi(buf);
+        if (find_patient(db, newPid)) {
+            cur->patientId = newPid;
+        } else {
+            printf("患者不存在，已保持原值。\n");
+        }
+    }
+    
+    /* 修改医生工号 */
+    printf("医生工号 [%d]: ", cur->doctorId);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        int newDid = atoi(buf);
+        if (find_doctor(db, newDid)) {
+            cur->doctorId = newDid;
+        } else {
+            printf("医生不存在，已保持原值。\n");
+        }
+    }
+    
+    /* 修改检查编码 */
+    printf("检查编码 [%s]: ", cur->code);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        safe_copy(cur->code, buf, sizeof(cur->code));
+    }
+    
+    /* 修改项目名称 */
+    printf("项目名称 [%s]: ", cur->itemName);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        safe_copy(cur->itemName, buf, sizeof(cur->itemName));
+    }
+    
+    /* 修改执行时间 */
+    printf("执行时间 [%s]: ", cur->execTime);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        if (strlen(buf) == 10 && buf[4] == '-' && buf[7] == '-') {
+            safe_copy(cur->execTime, buf, sizeof(cur->execTime));
+        } else {
+            printf("日期格式应为 YYYY-MM-DD，已保持原值。\n");
+        }
+    }
+    
+    /* 修改检查费用 */
+    printf("检查费用 [%.2f]: ", cur->fee);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        cur->fee = atof(buf);
+    }
+    
+    /* 修改检查结果 */
+    printf("检查结果 [%s]: ", cur->result);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        safe_copy(cur->result, buf, sizeof(cur->result));
+    }
+    
+    save_all(db, dataDir);
+    printf("\n检查记录修改成功！\n");
 }
 
 /*
@@ -1413,14 +1626,16 @@ static void registration_management_menu(Database *db, const char *dataDir) {
 static void visit_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
-        printf("\n--- 看诊管理 ---\n");
+        printf("\n--- 看诊记录管理 ---\n");
         printf("1. 新增看诊记录\n");
         printf("2. 删除看诊记录\n");
+        printf("3. 修改看诊记录\n");
         printf("0. 返回上级菜单\n");
-        choice = read_int("请选择: ", 0, 2);
+        choice = read_int("请选择: ", 0, 3);
         if (choice == 0) return;
         if (choice == 1) add_visit(db, dataDir);
-        else delete_visit(db, dataDir);
+        else if (choice == 2) delete_visit(db, dataDir);
+        else if (choice == 3) edit_visit(db, dataDir);
         pause_and_wait();
     }
 }
@@ -1433,14 +1648,16 @@ static void visit_management_menu(Database *db, const char *dataDir) {
 static void exam_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
-        printf("\n--- 检查管理 ---\n");
+        printf("\n--- 检查记录管理 ---\n");
         printf("1. 新增检查记录\n");
         printf("2. 删除检查记录\n");
+        printf("3. 修改检查记录\n");
         printf("0. 返回上级菜单\n");
-        choice = read_int("请选择: ", 0, 2);
+        choice = read_int("请选择: ", 0, 3);
         if (choice == 0) return;
         if (choice == 1) add_exam(db, dataDir);
-        else delete_exam(db, dataDir);
+        else if (choice == 2) delete_exam(db, dataDir);
+        else if (choice == 3) edit_exam(db, dataDir);
         pause_and_wait();
     }
 }
