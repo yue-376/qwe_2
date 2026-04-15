@@ -5,7 +5,10 @@
 *.out
 
 # Dependencies
-hospital/
+node_modules/
+venv/
+.venv/
+__pycache__/
 
 # Logs and temp files
 *.log
@@ -20,4 +23,14 @@ hospital/
 .env
 .env.local
 *.env.*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Build directories
+dist/
+build/
+target/
 ```
