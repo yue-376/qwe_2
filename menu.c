@@ -1825,6 +1825,8 @@ void user_account_management_menu(Database *db, const char *dataDir)
         printf("2. 新增账号\n");
         printf("3. 删除账号\n");
         printf("4. 修改密码\n");
+        printf("5. 创建档案（患者/医生）\n");
+        printf("6. 关联档案到账号\n");
         printf("0. 返回上级菜单\n");
         printf("============================================\n");
         printf("请选择：");
@@ -1971,6 +1973,210 @@ void user_account_management_menu(Database *db, const char *dataDir)
                 acc->password[sizeof(acc->password) - 1] = '\0';
 
                 printf("密码修改成功！\n");
+                save_all(db, dataDir);
+                pause_and_wait();
+                break;
+            }
+            case 5:
+            {
+                int typeChoice;
+                printf("\n--- 创建档案 ---\n");
+                printf("1. 创建患者档案\n");
+                printf("2. 创建医生档案\n");
+                printf("请选择：");
+                if (scanf("%d", &typeChoice) != 1 || (typeChoice != 1 && typeChoice != 2))
+                {
+                    printf("无效选择！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                if (typeChoice == 1)
+                {
+                    // 创建患者档案
+                    Patient *p = (Patient*)malloc(sizeof(Patient));
+                    if (!p)
+                    {
+                        printf("内存分配失败！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    p->id = next_patient_id(db);
+                    printf("自动生成的病历号：%d\n", p->id);
+                    
+                    printf("姓名：");
+                    scanf("%31s", p->name);
+                    
+                    printf("性别（男/女）：");
+                    scanf("%15s", p->gender);
+                    if (strcmp(p->gender, "男") != 0 && strcmp(p->gender, "女") != 0)
+                    {
+                        printf("性别必须为\"男\"或\"女\"，默认为\"男\"\n");
+                        strcpy(p->gender, "男");
+                    }
+                    
+                    printf("出生日期（YYYY-MM-DD）：");
+                    scanf("%31s", p->birth);
+                    
+                    printf("联系电话：");
+                    scanf("%31s", p->phone);
+                    
+                    printf("医保类型：");
+                    scanf("%31s", p->insurance);
+                    
+                    p->archived = 0;
+                    p->next = NULL;
+                    
+                    // 追加到链表
+                    if (!db->patients)
+                        db->patients = p;
+                    else
+                    {
+                        Patient *cur = db->patients;
+                        while (cur->next) cur = cur->next;
+                        cur->next = p;
+                    }
+                    
+                    printf("患者档案创建成功！病历号：%d\n", p->id);
+                    save_all(db, dataDir);
+                }
+                else
+                {
+                    // 创建医生档案
+                    Doctor *d = (Doctor*)malloc(sizeof(Doctor));
+                    if (!d)
+                    {
+                        printf("内存分配失败！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    d->id = next_doctor_id(db);
+                    printf("自动生成的工号：%d\n", d->id);
+                    
+                    printf("姓名：");
+                    scanf("%31s", d->name);
+                    
+                    printf("科室：");
+                    scanf("%31s", d->dept);
+                    
+                    printf("职称：");
+                    scanf("%31s", d->title);
+                    
+                    d->archived = 0;
+                    d->next = NULL;
+                    
+                    // 追加到链表
+                    if (!db->doctors)
+                        db->doctors = d;
+                    else
+                    {
+                        Doctor *cur = db->doctors;
+                        while (cur->next) cur = cur->next;
+                        cur->next = d;
+                    }
+                    
+                    printf("医生档案创建成功！工号：%d\n", d->id);
+                    save_all(db, dataDir);
+                }
+                pause_and_wait();
+                break;
+            }
+            case 6:
+            {
+                char username[32];
+                int targetId;
+                printf("\n--- 关联档案到账号 ---\n");
+                printf("请输入要关联档案的用户名：");
+                scanf("%31s", username);
+
+                Account *acc = find_account(db, username);
+                if (!acc)
+                {
+                    printf("未找到该用户！\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                if (acc->role == ROLE_MANAGER)
+                {
+                    printf("管理员账号不需要关联档案。\n");
+                    pause_and_wait();
+                    break;
+                }
+
+                printf("当前关联 ID：%d\n", acc->linkedId);
+                
+                if (acc->role == ROLE_PATIENT)
+                {
+                    printf("请输入要关联的患者病历号：");
+                    if (scanf("%d", &targetId) != 1)
+                    {
+                        printf("无效输入！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    
+                    Patient *p = find_patient(db, targetId);
+                    if (!p)
+                    {
+                        printf("未找到该病历号对应的患者档案！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    
+                    if (acc->linkedId != 0 && acc->linkedId != targetId)
+                    {
+                        printf("警告：该账号已关联其他患者档案（原病历号：%d）。\n", acc->linkedId);
+                        printf("确认要重新关联吗？(y/n): ");
+                        char confirm[16];
+                        scanf("%15s", confirm);
+                        if (confirm[0] != 'y' && confirm[0] != 'Y')
+                        {
+                            printf("已取消操作。\n");
+                            pause_and_wait();
+                            break;
+                        }
+                    }
+                    
+                    acc->linkedId = targetId;
+                    printf("已将患者账号 %s 关联到病历号 %d。\n", username, targetId);
+                }
+                else if (acc->role == ROLE_DOCTOR)
+                {
+                    printf("请输入要关联的医生工号：");
+                    if (scanf("%d", &targetId) != 1)
+                    {
+                        printf("无效输入！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    
+                    Doctor *d = find_doctor(db, targetId);
+                    if (!d)
+                    {
+                        printf("未找到该工号对应的医生档案！\n");
+                        pause_and_wait();
+                        break;
+                    }
+                    
+                    if (acc->linkedId != 0 && acc->linkedId != targetId)
+                    {
+                        printf("警告：该账号已关联其他医生档案（原工号：%d）。\n", acc->linkedId);
+                        printf("确认要重新关联吗？(y/n): ");
+                        char confirm[16];
+                        scanf("%15s", confirm);
+                        if (confirm[0] != 'y' && confirm[0] != 'Y')
+                        {
+                            printf("已取消操作。\n");
+                            pause_and_wait();
+                            break;
+                        }
+                    }
+                    
+                    acc->linkedId = targetId;
+                    printf("已将医生账号 %s 关联到工号 %d。\n", username, targetId);
+                }
+                
                 save_all(db, dataDir);
                 pause_and_wait();
                 break;
