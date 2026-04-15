@@ -331,13 +331,13 @@ static void load_regs(Database *db, const char *path)
 static void load_visits(Database *db, const char *path)
 {
     FILE *fp = fopen(path, "r");
-    char line[MAX_LINE];
+    char line[MAX_LINE * 2];
     if (!fp)
         return;
     while (fgets(line, sizeof(line), fp))
     {
         Visit *p = (Visit *)malloc(sizeof(Visit));
-        if (sscanf(line, "%d|%d|%255[^|]|%255[^|]|%255[^\n]", &p->id, &p->regId, p->diagnosis, p->examItems, p->prescription) == 5)
+        if (sscanf(line, "%d|%d|%511[^|]|%511[^|]|%511[^\n]", &p->id, &p->regId, p->diagnosis, p->examItems, p->prescription) == 5)
             append_visit(db, p);
         else
             free(p);
@@ -359,7 +359,7 @@ static void load_exams(Database *db, const char *path)
     while (fgets(line, sizeof(line), fp))
     {
         Exam *p = (Exam *)malloc(sizeof(Exam));
-        if (sscanf(line, "%d|%d|%d|%31[^|]|%63[^|]|%16[^|]|%lf|%255[^\n]", &p->id, &p->patientId, &p->doctorId, p->code, p->itemName, p->execTime, &p->fee, p->result) == 8)
+        if (sscanf(line, "%d|%d|%d|%31[^|]|%63[^|]|%16[^|]|%lf|%511[^\n]", &p->id, &p->patientId, &p->doctorId, p->code, p->itemName, p->execTime, &p->fee, p->result) == 8)
             append_exam(db, p);
         else
             free(p);
