@@ -634,7 +634,7 @@ static void doctor_add_visit(Database *db, const char *dataDir) {
     if (!db->visits) db->visits = v; else { Visit *q = db->visits; while (q->next) q = q->next; q->next = v; }
     strcpy(r->status, "已就诊");
     save_all(db, dataDir);
-    printf("看诊记录已添加。\n");
+    printf("看诊记录已添加，编号：%d。\n", v->id);
 }
 
 /*
@@ -1197,7 +1197,7 @@ static void add_visit(Database *db, const char *dataDir) {
     if (!db->visits) db->visits = v; else { Visit *q = db->visits; while (q->next) q = q->next; q->next = v; }
     strcpy(r->status, "已就诊");
     save_all(db, dataDir);
-    printf("看诊记录已添加。\n");
+    printf("看诊记录已添加，编号：%d。\n", v->id);
 }
 
 /*
