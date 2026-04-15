@@ -1355,7 +1355,7 @@ static void add_exam(Database *db, const char *dataDir) {
     e->next = NULL;
     if (!db->exams) db->exams = e; else { Exam *q = db->exams; while (q->next) q = q->next; q->next = e; }
     save_all(db, dataDir);
-    printf("检查记录已添加。\n");
+    printf("检查记录已添加，编号：%d。\n", e->id);
 }
 
 /*
