@@ -14,6 +14,7 @@ static void edit_archive(Database *db, const char *dataDir);
 static void delete_doctor(Database *db, const char *dataDir);
 static void edit_patient(Database *db, const char *dataDir);
 static void edit_doctor(Database *db, const char *dataDir);
+static void exam_management_menu(Database *db, const char *dataDir);
 
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
@@ -646,14 +647,16 @@ void doctor_menu(Database *db, const char *dataDir) {
         printf("欢迎，%s\n", g_session.username);
         printf("1. 查看我的患者\n");
         printf("2. 添加看诊记录\n");
+        printf("3. 检查记录管理\n");
         printf("0. 登出并返回登录界面\n");
         printf("请选择：");
         
-        choice = read_int("", 0, 2);
+        choice = read_int("", 0, 3);
         
         switch (choice) {
             case 1: doctor_view_patients(db); break;
             case 2: doctor_add_visit(db, dataDir); break;
+            case 3: exam_management_menu(db, dataDir); break;
             case 0: 
                 logout_menu();
                 return;
