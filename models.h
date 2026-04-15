@@ -163,9 +163,9 @@ typedef struct Visit
 {
     int id;                     /* 看诊编号 */
     int regId;                  /* 关联挂号编号 */
-    char diagnosis[LONG_LEN];   /* 诊断结果 */
-    char examItems[LONG_LEN];   /* 检查项目 */
-    char prescription[LONG_LEN];/* 处方信息 */
+    char diagnosis[LONG_LEN * 2];   /* 诊断结果 */
+    char examItems[LONG_LEN * 2];   /* 检查项目 */
+    char prescription[LONG_LEN * 2];/* 处方信息 */
     struct Visit *next;         /* 下一节点指针 */
 } Visit;
 
@@ -192,7 +192,7 @@ typedef struct Exam
     char itemName[NAME_LEN];    /* 项目名称 */
     char execTime[DATE_LEN];    /* 执行时间 */
     double fee;                 /* 费用 */
-    char result[LONG_LEN];      /* 检查结果 */
+    char result[LONG_LEN * 2];  /* 检查结果 */
     struct Exam *next;          /* 下一节点指针 */
 } Exam;
 
