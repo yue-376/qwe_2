@@ -166,9 +166,12 @@ static int count_patient_regs_same_day_dept(Database *db, int patientId, const c
 static int count_patient_regs_same_day(Database *db, int patientId, const char *date);
 static int read_date_with_back(const char *prompt, char *buf, int size);
 
-/* 查看个人挂号记录 */
-static void patient_view_registrations(Database *db) {
+/* 查看个人医疗记录（合并显示挂号、看诊、检查、住院记录） */
+static void patient_view_medical_records(Database *db) {
     Registration *r;
+    Visit *v;
+    Exam *e;
+    Inpatient *ip;
     int found = 0;
     
     if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
@@ -176,16 +179,62 @@ static void patient_view_registrations(Database *db) {
         return;
     }
     
-    printf("\n=== 我的挂号记录 ===\n");
+    printf("\n========== 我的医疗记录 ==========\n");
+    
+    /* 显示挂号记录 */
+    printf("\n--- 挂号记录 ---\n");
+    found = 0;
     for (r = db->registrations; r; r = r->next) {
         if (r->patientId == g_session.userId) {
             printf("[%d] %s %s 医生%d %s %s\n", r->id, r->date, r->dept, r->doctorId, r->type, r->status);
             found = 1;
         }
     }
-    
     if (!found) {
         printf("暂无挂号记录。\n");
+    }
+    
+    /* 显示看诊记录 */
+    printf("\n--- 看诊记录 ---\n");
+    found = 0;
+    for (v = db->visits; v; v = v->next) {
+        /* 通过 regId 找到对应的挂号记录，再判断是否属于当前患者 */
+        Registration *reg = find_registration(db, v->regId);
+        if (reg && reg->patientId == g_session.userId) {
+            printf("[挂号%d] 诊断：%s\n    检查项目：%s\n    处方：%s\n", 
+                   v->regId, v->diagnosis, v->examItems, v->prescription);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("暂无看诊记录。\n");
+    }
+    
+    /* 显示检查记录 */
+    printf("\n--- 检查记录 ---\n");
+    found = 0;
+    for (e = db->exams; e; e = e->next) {
+        if (e->patientId == g_session.userId) {
+            printf("[%d] %s %s %.2f %s\n", e->id, e->code, e->itemName, e->fee, e->result);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("暂无检查记录。\n");
+    }
+    
+    /* 显示住院记录 */
+    printf("\n--- 住院记录 ---\n");
+    found = 0;
+    for (ip = db->inpatients; ip; ip = ip->next) {
+        if (ip->patientId == g_session.userId) {
+            printf("[%d] 病房%d 床位%d %s ~ %s 费用%.2f\n", 
+                   ip->id, ip->wardId, ip->bedNo, ip->admitDate, ip->expectedDischarge, ip->totalCost);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("暂无住院记录。\n");
     }
 }
 
@@ -336,50 +385,19 @@ static void patient_cancel_registration(Database *db, const char *dataDir) {
     printf("取消成功。\n");
 }
 
-/* 查看个人检查记录 */
-static void patient_view_exams(Database *db) {
-    Exam *e;
-    int found = 0;
-    
-    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
-        printf("权限不足。\n");
-        return;
-    }
-    
-    printf("\n=== 我的检查记录 ===\n");
-    for (e = db->exams; e; e = e->next) {
-        if (e->patientId == g_session.userId) {
-            printf("[%d] %s %s %.2f %s\n", e->id, e->code, e->itemName, e->fee, e->result);
-            found = 1;
-        }
-    }
-    
-    if (!found) {
-        printf("暂无检查记录。\n");
-    }
-}
-
-/* 查看个人住院记录 */
-static void patient_view_inpatients(Database *db) {
-    Inpatient *ip;
-    int found = 0;
-    
-    if (!g_session.isLoggedIn || g_session.role != ROLE_PATIENT) {
-        printf("权限不足。\n");
-        return;
-    }
-    
-    printf("\n=== 我的住院记录 ===\n");
-    for (ip = db->inpatients; ip; ip = ip->next) {
-        if (ip->patientId == g_session.userId) {
-            printf("[%d] 病房%d 床位%d %s ~ %s 费用%.2f\n", 
-                   ip->id, ip->wardId, ip->bedNo, ip->admitDate, ip->expectedDischarge, ip->totalCost);
-            found = 1;
-        }
-    }
-    
-    if (!found) {
-        printf("暂无住院记录。\n");
+/* 患者挂号管理子菜单（包含新增和取消挂号） */
+static void patient_registration_management(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 挂号管理 ---\n");
+        printf("1. 新增挂号\n");
+        printf("2. 取消挂号\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择：", 0, 2);
+        if (choice == 0) return;
+        if (choice == 1) patient_add_registration(db, dataDir);
+        else if (choice == 2) patient_cancel_registration(db, dataDir);
+        pause_and_wait();
     }
 }
 
@@ -515,24 +533,18 @@ void patient_menu(Database *db, const char *dataDir) {
     while (1) {
         printf("\n========== 患者服务菜单 ==========\n");
         printf("欢迎，%s\n", g_session.username);
-        printf("1. 查看我的挂号记录\n");
-        printf("2. 挂号\n");
-        printf("3. 取消挂号\n");
-        printf("4. 查看我的检查记录\n");
-        printf("5. 查看我的住院记录\n");
-        printf("6. 修改个人信息\n");
+        printf("1. 查看我的医疗记录\n");
+        printf("2. 挂号管理\n");
+        printf("3. 修改个人信息\n");
         printf("0. 登出并返回登录界面\n");
         printf("请选择：");
         
-        choice = read_int("", 0, 6);
+        choice = read_int("", 0, 3);
         
         switch (choice) {
-            case 1: patient_view_registrations(db); break;
-            case 2: patient_add_registration(db, dataDir); break;
-            case 3: patient_cancel_registration(db, dataDir); break;
-            case 4: patient_view_exams(db); break;
-            case 5: patient_view_inpatients(db); break;
-            case 6: 
+            case 1: patient_view_medical_records(db); break;
+            case 2: patient_registration_management(db, dataDir); break;
+            case 3: 
                 patient_edit_profile(db, dataDir); 
                 break;
             case 0: 
