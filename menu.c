@@ -18,6 +18,8 @@ static void exam_management_menu(Database *db, const char *dataDir);
 static void visit_management_menu(Database *db, const char *dataDir);
 static void edit_visit(Database *db, const char *dataDir);
 static void edit_exam(Database *db, const char *dataDir);
+static void edit_inpatient(Database *db, const char *dataDir);
+static void inpatient_management_menu(Database *db, const char *dataDir);
 
 /* ==================== 全局登录会话 ==================== */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
@@ -651,15 +653,17 @@ void doctor_menu(Database *db, const char *dataDir) {
         printf("1. 查看我的患者\n");
         printf("2. 看诊记录管理\n");
         printf("3. 检查记录管理\n");
+        printf("4. 住院记录管理\n");
         printf("0. 登出并返回登录界面\n");
         printf("请选择：");
         
-        choice = read_int("", 0, 3);
+        choice = read_int("", 0, 4);
         
         switch (choice) {
             case 1: doctor_view_patients(db); break;
             case 2: visit_management_menu(db, dataDir); break;
             case 3: exam_management_menu(db, dataDir); break;
+            case 4: inpatient_management_menu(db, dataDir); break;
             case 0: 
                 logout_menu();
                 return;
@@ -1599,6 +1603,136 @@ static void delete_inpatient(Database *db, const char *dataDir) {
 }
 
 /*
+ * 说明：修改住院记录
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 读取要修改的住院编号
+ * 2. 查找住院记录并显示当前信息
+ * 3. 允许用户修改各项字段（直接回车保持原值，输入 0 取消）
+ * 4. 保存修改
+ */
+static void edit_inpatient(Database *db, const char *dataDir) {
+    int id = read_int("要修改的住院编号 (输入 0 返回): ", 0, 1000000);
+    Inpatient *cur;
+    char buf[64];
+    
+    if (id == 0) { 
+        printf("已返回上一步。\n"); 
+        return; 
+    }
+    
+    cur = db->inpatients;
+    while (cur && cur->id != id) {
+        cur = cur->next;
+    }
+    if (!cur) { 
+        printf("住院记录不存在。\n"); 
+        return; 
+    }
+    
+    printf("\n=== 修改住院记录 ===\n");
+    printf("当前信息：\n");
+    printf("  患者病历号：%d\n", cur->patientId);
+    printf("  病房编号：%d\n", cur->wardId);
+    printf("  床位号：%d\n", cur->bedNo);
+    printf("  入院日期：%s\n", cur->admitDate);
+    printf("  预计出院日期：%s\n", cur->expectedDischarge);
+    printf("  预估住院费用：%.2f\n", cur->totalCost);
+    
+    printf("\n请输入新信息（直接回车保持原值，输入 0 取消修改）：\n");
+    
+    /* 修改患者病历号 */
+    printf("患者病历号 [%d]: ", cur->patientId);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        int newPid = atoi(buf);
+        if (find_patient(db, newPid)) {
+            cur->patientId = newPid;
+        } else {
+            printf("患者不存在，已保持原值。\n");
+        }
+    }
+    
+    /* 修改病房编号 */
+    printf("病房编号 [%d]: ", cur->wardId);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        int newWardId = atoi(buf);
+        Ward *w = find_ward(db, newWardId);
+        if (w) {
+            cur->wardId = newWardId;
+        } else {
+            printf("病房不存在，已保持原值。\n");
+        }
+    }
+    
+    /* 修改床位号 */
+    printf("床位号 [%d]: ", cur->bedNo);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        cur->bedNo = atoi(buf);
+    }
+    
+    /* 修改入院日期 */
+    printf("入院日期 [%s]: ", cur->admitDate);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        if (validate_date(buf)) {
+            safe_copy(cur->admitDate, buf, sizeof(cur->admitDate));
+        } else {
+            printf("日期格式无效，已保持原值。\n");
+        }
+    }
+    
+    /* 修改预计出院日期 */
+    printf("预计出院日期 [%s]: ", cur->expectedDischarge);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        if (validate_date(buf)) {
+            safe_copy(cur->expectedDischarge, buf, sizeof(cur->expectedDischarge));
+        } else {
+            printf("日期格式无效，已保持原值。\n");
+        }
+    }
+    
+    /* 修改预估住院费用 */
+    printf("预估住院费用 [%.2f]: ", cur->totalCost);
+    read_line("", buf, sizeof(buf));
+    if (strcmp(buf, "0") == 0) {
+        printf("已取消修改。\n");
+        return;
+    }
+    if (strlen(buf) > 0) {
+        cur->totalCost = atof(buf);
+    }
+    
+    save_all(db, dataDir);
+    printf("\n住院记录修改成功！\n");
+}
+
+/*
  * 说明：挂号管理子菜单
  * 参数：db 数据库指针
  * 参数：dataDir 数据文件目录
@@ -1670,14 +1804,16 @@ static void exam_management_menu(Database *db, const char *dataDir) {
 static void inpatient_management_menu(Database *db, const char *dataDir) {
     int choice;
     while (1) {
-        printf("\n--- 住院管理 ---\n");
+        printf("\n--- 住院记录管理 ---\n");
         printf("1. 新增住院记录\n");
         printf("2. 删除住院记录\n");
+        printf("3. 修改住院记录\n");
         printf("0. 返回上级菜单\n");
-        choice = read_int("请选择: ", 0, 2);
+        choice = read_int("请选择: ", 0, 3);
         if (choice == 0) return;
         if (choice == 1) add_inpatient(db, dataDir);
-        else delete_inpatient(db, dataDir);
+        else if (choice == 2) delete_inpatient(db, dataDir);
+        else if (choice == 3) edit_inpatient(db, dataDir);
         pause_and_wait();
     }
 }
