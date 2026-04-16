@@ -680,6 +680,7 @@ int load_all(Database *db, const char *dir)
     path_join(path, sizeof(path), dir, "druglogs.txt");
     if (file_exists(path))
         load_druglogs(db, path);
+    /* 注意：程序启动时加载 accounts.txt，保持账号数据 */
     path_join(path, sizeof(path), dir, "accounts.txt");
     if (file_exists(path))
         load_accounts(db, path);
@@ -730,7 +731,7 @@ int import_all(Database *db, const char *dir)
     char path[256];
     int count = 0;
     
-    /* 先清空现有数据 */
+    /* 先清空现有数据（但保留账号数据，避免覆盖） */
     free_patients(db->patients);
     db->patients = NULL;
     free_doctors(db->doctors);
@@ -749,8 +750,7 @@ int import_all(Database *db, const char *dir)
     db->drugs = NULL;
     free_druglogs(db->drugLogs);
     db->drugLogs = NULL;
-    free_accounts(db->accounts);
-    db->accounts = NULL;
+    /* 注意：不清空账号数据，避免导入时覆盖现有账号 */
     
     path_join(path, sizeof(path), dir, "patients.txt");
     if (file_exists(path))
@@ -806,12 +806,7 @@ int import_all(Database *db, const char *dir)
         load_druglogs(db, path);
         count++;
     }
-    path_join(path, sizeof(path), dir, "accounts.txt");
-    if (file_exists(path))
-    {
-        load_accounts(db, path);
-        count++;
-    }
+    /* 注意：导入时不再加载 accounts.txt，避免覆盖现有账号数据 */
     
     return count;
 }
