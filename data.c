@@ -1,7 +1,36 @@
-#include "models.h"
+/*
+ * 文件：data.c
+ * 说明：数据加载与保存功能实现文件
+ * 
+ * 本文件实现了医院管理系统中所有数据的持久化操作，包括：
+ * - 将各种数据节点追加到链表末尾的辅助函数
+ * - 从文本文件加载数据到内存链表
+ * - 将内存链表数据保存到文本文件
+ * - 批量加载和保存所有数据
+ * - 数据导入功能
+ * 
+ * 数据文件格式：使用 '|' 作为字段分隔符的文本文件
+ * 支持的数据类型：患者、医生、挂号记录、看诊记录、检查记录、
+ *                  病房、住院记录、药品、药品日志、账号
+ */
 
-/* 将患者节点追加到患者链表末尾 */
-/* 将患者节点追加到患者链表末尾 */
+#include "models.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* ==================== 链表节点追加函数 ==================== */
+
+/*
+ * 说明：将患者节点追加到患者链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的患者节点
+ * 
+ * 处理流程：
+ * 1. 将新节点的 next 指针设为 NULL
+ * 2. 如果链表为空，直接将新节点设为头节点
+ * 3. 否则遍历到链表末尾，将新节点接在最后一个节点后面
+ */
 static void append_patient(Database *db, Patient *node)
 {
     node->next = NULL;
@@ -15,8 +44,12 @@ static void append_patient(Database *db, Patient *node)
         p->next = node;
     }
 }
-/* 将医生节点追加到医生链表末尾 */
-/* 将医生节点追加到医生链表末尾 */
+
+/*
+ * 说明：将医生节点追加到医生链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的医生节点
+ */
 static void append_doctor(Database *db, Doctor *node)
 {
     node->next = NULL;
@@ -30,8 +63,12 @@ static void append_doctor(Database *db, Doctor *node)
         p->next = node;
     }
 }
-/* 将挂号记录节点追加到挂号链表末尾 */
-/* 将挂号记录节点追加到挂号链表末尾 */
+
+/*
+ * 说明：将挂号记录节点追加到挂号链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的挂号记录节点
+ */
 static void append_reg(Database *db, Registration *node)
 {
     node->next = NULL;
@@ -45,8 +82,12 @@ static void append_reg(Database *db, Registration *node)
         p->next = node;
     }
 }
-/* 将看诊记录节点追加到看诊链表末尾 */
-/* 将看诊记录节点追加到看诊链表末尾 */
+
+/*
+ * 说明：将看诊记录节点追加到看诊链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的看诊记录节点
+ */
 static void append_visit(Database *db, Visit *node)
 {
     node->next = NULL;
@@ -60,8 +101,12 @@ static void append_visit(Database *db, Visit *node)
         p->next = node;
     }
 }
-/* 将检查记录节点追加到检查链表末尾 */
-/* 将检查记录节点追加到检查链表末尾 */
+
+/*
+ * 说明：将检查记录节点追加到检查链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的检查记录节点
+ */
 static void append_exam(Database *db, Exam *node)
 {
     node->next = NULL;
@@ -75,8 +120,12 @@ static void append_exam(Database *db, Exam *node)
         p->next = node;
     }
 }
-/* 将病房节点追加到病房链表末尾 */
-/* 将病房节点追加到病房链表末尾 */
+
+/*
+ * 说明：将病房节点追加到病房链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的病房节点
+ */
 static void append_ward(Database *db, Ward *node)
 {
     node->next = NULL;
@@ -90,8 +139,12 @@ static void append_ward(Database *db, Ward *node)
         p->next = node;
     }
 }
-/* 将住院记录节点追加到住院链表末尾 */
-/* 将住院记录节点追加到住院链表末尾 */
+
+/*
+ * 说明：将住院记录节点追加到住院链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的住院记录节点
+ */
 static void append_inpatient(Database *db, Inpatient *node)
 {
     node->next = NULL;
@@ -105,8 +158,12 @@ static void append_inpatient(Database *db, Inpatient *node)
         p->next = node;
     }
 }
-/* 将药品节点追加到药品链表末尾 */
-/* 将药品节点追加到药品链表末尾 */
+
+/*
+ * 说明：将药品节点追加到药品链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的药品节点
+ */
 static void append_drug(Database *db, Drug *node)
 {
     node->next = NULL;
@@ -120,7 +177,12 @@ static void append_drug(Database *db, Drug *node)
         p->next = node;
     }
 }
-/* 将药品出入库日志节点追加到日志链表末尾 */
+
+/*
+ * 说明：将药品出入库日志节点追加到日志链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的药品日志节点
+ */
 static void append_druglog(Database *db, DrugLog *node)
 {
     node->next = NULL;
@@ -135,7 +197,11 @@ static void append_druglog(Database *db, DrugLog *node)
     }
 }
 
-/* 将账号节点追加到账号链表末尾 */
+/*
+ * 说明：将账号节点追加到账号链表末尾
+ * 参数：db 数据库指针
+ * 参数：node 要添加的账号节点
+ */
 static void append_account(Database *db, Account *node)
 {
     node->next = NULL;
@@ -150,6 +216,17 @@ static void append_account(Database *db, Account *node)
     }
 }
 
+/*
+ * 说明：根据 ID 查找患者
+ * 参数：db 数据库指针
+ * 参数：id 要查找的患者 ID
+ * 返回值：找到则返回患者节点指针，否则返回 NULL
+ * 
+ * 处理流程：
+ * 1. 从患者链表头开始遍历
+ * 2. 逐个比较节点 ID 与目标 ID
+ * 3. 找到匹配则返回该节点，遍历结束未找到则返回 NULL
+ */
 Patient *find_patient(Database *db, int id)
 {
     Patient *p = db->patients;
@@ -161,6 +238,13 @@ Patient *find_patient(Database *db, int id)
     }
     return NULL;
 }
+
+/*
+ * 说明：根据 ID 查找医生
+ * 参数：db 数据库指针
+ * 参数：id 要查找的医生 ID
+ * 返回值：找到则返回医生节点指针，否则返回 NULL
+ */
 Doctor *find_doctor(Database *db, int id)
 {
     Doctor *p = db->doctors;
@@ -172,6 +256,13 @@ Doctor *find_doctor(Database *db, int id)
     }
     return NULL;
 }
+
+/*
+ * 说明：根据 ID 查找挂号记录
+ * 参数：db 数据库指针
+ * 参数：id 要查找的挂号记录 ID
+ * 返回值：找到则返回挂号记录节点指针，否则返回 NULL
+ */
 Registration *find_registration(Database *db, int id)
 {
     Registration *p = db->registrations;
@@ -183,6 +274,13 @@ Registration *find_registration(Database *db, int id)
     }
     return NULL;
 }
+
+/*
+ * 说明：根据 ID 查找病房
+ * 参数：db 数据库指针
+ * 参数：id 要查找的病房 ID
+ * 返回值：找到则返回病房节点指针，否则返回 NULL
+ */
 Ward *find_ward(Database *db, int id)
 {
     Ward *p = db->wards;
@@ -194,6 +292,13 @@ Ward *find_ward(Database *db, int id)
     }
     return NULL;
 }
+
+/*
+ * 说明：根据 ID 查找药品
+ * 参数：db 数据库指针
+ * 参数：id 要查找的药品 ID
+ * 返回值：找到则返回药品节点指针，否则返回 NULL
+ */
 Drug *find_drug(Database *db, int id)
 {
     Drug *p = db->drugs;
@@ -206,6 +311,17 @@ Drug *find_drug(Database *db, int id)
     return NULL;
 }
 
+/*
+ * 说明：宏定义，用于生成获取下一个可用 ID 的函数
+ * 参数：type 数据类型（如 Patient、Doctor 等）
+ * 参数：field 数据库中对应的链表字段名
+ * 参数：name 生成的函数名
+ * 
+ * 工作原理：
+ * 1. 遍历指定类型的链表，找到最大的 ID 值
+ * 2. 返回最大 ID + 1 作为下一个可用 ID
+ * 3. 如果链表为空，返回 1
+ */
 #define NEXT_ID_FUNC(type, field, name) \
     int name(Database *db)              \
     {                                   \
@@ -219,6 +335,8 @@ Drug *find_drug(Database *db, int id)
         }                               \
         return max + 1;                 \
     }
+
+/* 为各种数据类型生成 next_xxx_id 函数 */
 NEXT_ID_FUNC(Patient, patients, next_patient_id)
 NEXT_ID_FUNC(Doctor, doctors, next_doctor_id)
 NEXT_ID_FUNC(Registration, registrations, next_registration_id)
@@ -229,10 +347,17 @@ NEXT_ID_FUNC(Inpatient, inpatients, next_inpatient_id)
 NEXT_ID_FUNC(Drug, drugs, next_drug_id)
 NEXT_ID_FUNC(DrugLog, drugLogs, next_druglog_id)
 
+/* ==================== 文件操作辅助函数 ==================== */
+
 /*
  * 说明：检查文件是否存在
  * 参数：path 文件路径
  * 返回值：1 表示存在，0 表示不存在
+ * 
+ * 处理流程：
+ * 1. 尝试以只读模式打开文件
+ * 2. 如果打开成功则关闭文件并返回 1
+ * 3. 如果打开失败则返回 0
  */
 static int file_exists(const char *path)
 {
@@ -251,17 +376,27 @@ static int file_exists(const char *path)
  * 参数：size 缓冲区大小
  * 参数：dir 目录路径
  * 参数：name 文件名
+ * 
+ * 示例：path_join(out, sizeof(out), "/data", "patients.txt") 
+ *       结果：out = "/data/patients.txt"
  */
 void path_join(char *out, size_t size, const char *dir, const char *name)
 {
     snprintf(out, size, "%s/%s", dir, name);
 }
 
-/* 从文件加载患者数据到数据库 */
+/* ==================== 数据加载函数 ==================== */
+
 /*
  * 说明：从文件加载患者数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|name|gender|birth|phone|insurance|archived
+ * 处理流程：
+ * 1. 打开文件逐行读取
+ * 2. 为每行数据分配患者节点内存
+ * 3. 使用 sscanf 解析字段，成功则添加到链表，失败则释放内存
  */
 static void load_patients(Database *db, const char *path)
 {
@@ -279,11 +414,13 @@ static void load_patients(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载医生数据到数据库 */
+
 /*
  * 说明：从文件加载医生数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|name|dept|title|archived
  */
 static void load_doctors(Database *db, const char *path)
 {
@@ -301,10 +438,13 @@ static void load_doctors(Database *db, const char *path)
     }
     fclose(fp);
 }
+
 /*
  * 说明：从文件加载挂号记录数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|doctorId|dept|date|type|status
  */
 static void load_regs(Database *db, const char *path)
 {
@@ -322,11 +462,13 @@ static void load_regs(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载看诊记录数据到数据库 */
+
 /*
  * 说明：从文件加载看诊记录数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|regId|diagnosis|examItems|prescription
  */
 static void load_visits(Database *db, const char *path)
 {
@@ -344,11 +486,13 @@ static void load_visits(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载检查记录数据到数据库 */
+
 /*
  * 说明：从文件加载检查记录数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|doctorId|code|itemName|execTime|fee|result
  */
 static void load_exams(Database *db, const char *path)
 {
@@ -366,11 +510,13 @@ static void load_exams(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载病房数据到数据库 */
+
 /*
  * 说明：从文件加载病房数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|wardType|dept|bedCount|occupiedBeds|maintenanceBeds
  */
 static void load_wards(Database *db, const char *path)
 {
@@ -388,11 +534,13 @@ static void load_wards(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载住院记录数据到数据库 */
+
 /*
  * 说明：从文件加载住院记录数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|wardId|bedNo|admitDate|expectedDischarge|totalCost
  */
 static void load_inpatients(Database *db, const char *path)
 {
@@ -410,11 +558,13 @@ static void load_inpatients(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载药品数据到数据库 */
+
 /*
  * 说明：从文件加载药品数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|genericName|brandName|alias|type|dept|price|stock
  */
 static void load_drugs(Database *db, const char *path)
 {
@@ -432,11 +582,13 @@ static void load_drugs(Database *db, const char *path)
     }
     fclose(fp);
 }
-/* 从文件加载药品日志数据到数据库 */
+
 /*
  * 说明：从文件加载药品出入库日志数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|drugId|operation|quantity|operatorName|date
  */
 static void load_druglogs(Database *db, const char *path)
 {
@@ -455,11 +607,12 @@ static void load_druglogs(Database *db, const char *path)
     fclose(fp);
 }
 
-/* 从文件加载账号数据到数据库 */
 /*
  * 说明：从文件加载账号数据到数据库
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：username|password|role|linkedId
  */
 static void load_accounts(Database *db, const char *path)
 {
@@ -483,11 +636,18 @@ static void load_accounts(Database *db, const char *path)
     fclose(fp);
 }
 
-/* 保存患者数据到文件 */
+/* ==================== 数据保存函数 ==================== */
+
 /*
  * 说明：保存患者数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|name|gender|birth|phone|insurance|archived
+ * 处理流程：
+ * 1. 以写模式打开文件
+ * 2. 遍历患者链表，将每个节点格式化写入文件
+ * 3. 关闭文件
  */
 void save_patients(Database *db, const char *path)
 {
@@ -499,11 +659,13 @@ void save_patients(Database *db, const char *path)
         fprintf(fp, "%d|%s|%s|%s|%s|%s|%d\n", p->id, p->name, p->gender, p->birth, p->phone, p->insurance, p->archived);
     fclose(fp);
 }
-/* 保存医生数据到文件 */
+
 /*
  * 说明：保存医生数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|name|dept|title|archived
  */
 static void save_doctors(Database *db, const char *path)
 {
@@ -515,10 +677,13 @@ static void save_doctors(Database *db, const char *path)
         fprintf(fp, "%d|%s|%s|%s|%d\n", p->id, p->name, p->dept, p->title, p->archived);
     fclose(fp);
 }
+
 /*
  * 说明：保存挂号记录数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|doctorId|dept|date|type|status
  */
 static void save_regs(Database *db, const char *path)
 {
@@ -530,11 +695,13 @@ static void save_regs(Database *db, const char *path)
         fprintf(fp, "%d|%d|%d|%s|%s|%s|%s\n", p->id, p->patientId, p->doctorId, p->dept, p->date, p->type, p->status);
     fclose(fp);
 }
-/* 保存看诊记录数据到文件 */
+
 /*
  * 说明：保存看诊记录数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|regId|diagnosis|examItems|prescription
  */
 static void save_visits(Database *db, const char *path)
 {
@@ -546,11 +713,13 @@ static void save_visits(Database *db, const char *path)
         fprintf(fp, "%d|%d|%s|%s|%s\n", p->id, p->regId, p->diagnosis, p->examItems, p->prescription);
     fclose(fp);
 }
-/* 保存检查记录数据到文件 */
+
 /*
  * 说明：保存检查记录数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|doctorId|code|itemName|execTime|fee|result
  */
 static void save_exams(Database *db, const char *path)
 {
@@ -562,11 +731,13 @@ static void save_exams(Database *db, const char *path)
         fprintf(fp, "%d|%d|%d|%s|%s|%s|%.2f|%s\n", p->id, p->patientId, p->doctorId, p->code, p->itemName, p->execTime, p->fee, p->result);
     fclose(fp);
 }
-/* 保存病房数据到文件 */
+
 /*
  * 说明：保存病房数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|wardType|dept|bedCount|occupiedBeds|maintenanceBeds
  */
 static void save_wards(Database *db, const char *path)
 {
@@ -578,11 +749,13 @@ static void save_wards(Database *db, const char *path)
         fprintf(fp, "%d|%s|%s|%d|%d|%d\n", p->id, p->wardType, p->dept, p->bedCount, p->occupiedBeds, p->maintenanceBeds);
     fclose(fp);
 }
-/* 保存住院记录数据到文件 */
+
 /*
  * 说明：保存住院记录数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|patientId|wardId|bedNo|admitDate|expectedDischarge|totalCost
  */
 static void save_inpatients(Database *db, const char *path)
 {
@@ -594,11 +767,13 @@ static void save_inpatients(Database *db, const char *path)
         fprintf(fp, "%d|%d|%d|%d|%s|%s|%.2f\n", p->id, p->patientId, p->wardId, p->bedNo, p->admitDate, p->expectedDischarge, p->totalCost);
     fclose(fp);
 }
-/* 保存药品数据到文件 */
+
 /*
  * 说明：保存药品数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|genericName|brandName|alias|type|dept|price|stock
  */
 static void save_drugs(Database *db, const char *path)
 {
@@ -610,11 +785,13 @@ static void save_drugs(Database *db, const char *path)
         fprintf(fp, "%d|%s|%s|%s|%s|%s|%.2f|%d\n", p->id, p->genericName, p->brandName, p->alias, p->type, p->dept, p->price, p->stock);
     fclose(fp);
 }
-/* 保存药品日志数据到文件 */
+
 /*
  * 说明：保存药品出入库日志数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：id|drugId|operation|quantity|operatorName|date
  */
 static void save_druglogs(Database *db, const char *path)
 {
@@ -627,11 +804,13 @@ static void save_druglogs(Database *db, const char *path)
     fclose(fp);
 }
 
-/* 保存账号数据到文件 */
 /*
  * 说明：保存账号数据到文件
  * 参数：db 数据库指针
  * 参数：path 文件路径
+ * 
+ * 文件格式：username|password|role|linkedId
+ * 注意：账号数据包含敏感信息（密码），实际应用中应加密存储
  */
 void save_accounts(Database *db, const char *path)
 {
