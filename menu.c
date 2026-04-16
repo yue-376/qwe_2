@@ -6,29 +6,45 @@
 #include <stdlib.h>
 
 /* ==================== 前向声明 ==================== */
-static void create_doctor_archive(Database *db, const char *dataDir);
-static void link_archive_to_account(Database *db, const char *dataDir);
-static void add_archive(Database *db, const char *dataDir);
-static void delete_archive(Database *db, const char *dataDir);
-static void edit_archive(Database *db, const char *dataDir);
-static void delete_doctor(Database *db, const char *dataDir);
-static void edit_patient(Database *db, const char *dataDir);
-static void edit_doctor(Database *db, const char *dataDir);
-static void exam_management_menu(Database *db, const char *dataDir);
-static void visit_management_menu(Database *db, const char *dataDir);
-static void edit_visit(Database *db, const char *dataDir);
-static void edit_exam(Database *db, const char *dataDir);
-static void edit_inpatient(Database *db, const char *dataDir);
-static void inpatient_management_menu(Database *db, const char *dataDir);
+/* 以下是本文件中定义的各个功能函数的前置声明，让编译器在遇到函数调用时知道它们的存在 */
+static void create_doctor_archive(Database *db, const char *dataDir);   /* 创建医生档案 */
+static void link_archive_to_account(Database *db, const char *dataDir); /* 将档案（患者/医生）关联到用户账号 */
+static void add_archive(Database *db, const char *dataDir);             /* 新增档案（患者或医生） */
+static void delete_archive(Database *db, const char *dataDir);          /* 删除档案（患者或医生） */
+static void edit_archive(Database *db, const char *dataDir);            /* 修改档案（患者或医生） */
+static void delete_doctor(Database *db, const char *dataDir);           /* 删除医生档案 */
+static void edit_patient(Database *db, const char *dataDir);            /* 修改患者档案 */
+static void edit_doctor(Database *db, const char *dataDir);             /* 修改医生档案 */
+static void exam_management_menu(Database *db, const char *dataDir);    /* 检查记录管理子菜单 */
+static void visit_management_menu(Database *db, const char *dataDir);   /* 看诊记录管理子菜单 */
+static void edit_visit(Database *db, const char *dataDir);              /* 修改看诊记录 */
+static void edit_exam(Database *db, const char *dataDir);               /* 修改检查记录 */
+static void edit_inpatient(Database *db, const char *dataDir);          /* 修改住院记录 */
+static void inpatient_management_menu(Database *db, const char *dataDir); /* 住院记录管理子菜单 */
 
 /* ==================== 全局登录会话 ==================== */
+/* 全局变量 g_session 用于保存当前登录用户的信息，包括登录状态、角色、关联 ID 和用户名 */
 UserSession g_session = {0, ROLE_PATIENT, 0, ""};
 
 /* ==================== 登录与注册功能 ==================== */
 
 /*
- * 说明：注册菜单函数
- * 参数：db 数据库指针
+ * 函数：register_menu - 用户注册功能
+ * 
+ * 功能说明：
+ *   引导新用户完成注册流程，包括输入用户名、密码、选择角色（患者/医生/管理员），
+ *   并可选地关联已有的病历号或医生工号。注册成功后会保存到账户文件。
+ * 
+ * 参数：
+ *   db - 数据库指针，用于查询和创建账户
+ * 
+ * 流程：
+ *   1. 提示输入用户名，检查是否为空以及是否已存在
+ *   2. 循环要求输入密码（至少 4 位）并确认两次一致
+ *   3. 让用户选择角色（1-患者，2-医生，3-管理员）
+ *   4. 根据角色不同，提示输入关联的病历号或医生工号
+ *   5. 调用 create_account 创建账户并保存到文件
+ *   6. 显示注册结果
  */
 void register_menu(Database *db) {
     char username[32], password[64], confirm[64];
@@ -108,9 +124,27 @@ void register_menu(Database *db) {
 }
 
 /*
- * 说明：登录菜单函数
- * 参数：db 数据库指针
- * 返回值：登录成功返回 1，失败返回 0
+ * 函数：login_menu - 用户登录功能
+ * 
+ * 功能说明：
+ *   提供用户登录界面，支持登录、注册新账号、退出程序三个选项。
+ *   登录成功后会更新全局会话信息 g_session，并返回相应状态码。
+ * 
+ * 参数：
+ *   db - 数据库指针，用于验证用户身份
+ * 
+ * 返回值：
+ *   1  - 登录成功
+ *   0  - 用户选择退出程序
+ *   -1 - 登录失败或注册成功（需要重新显示登录菜单）
+ * 
+ * 流程：
+ *   1. 显示登录菜单（登录/注册/退出）
+ *   2. 如果选择注册，调用 register_menu 并返回 -1
+ *   3. 如果选择退出，返回 0
+ *   4. 否则提示输入用户名和密码
+ *   5. 调用 authenticate_user 验证身份
+ *   6. 验证成功则更新全局会话并返回 1，失败则返回 -1
  */
 int login_menu(Database *db) {
     char username[32], password[64];
@@ -157,7 +191,11 @@ int login_menu(Database *db) {
 }
 
 /*
- * 说明：登出菜单
+ * 函数：logout_menu - 用户登出功能
+ * 
+ * 功能说明：
+ *   调用 logout_user 清除当前登录会话，并显示登出成功提示。
+ *   这是一个简单的辅助函数，通常在各角色菜单的"退出"选项中被调用。
  */
 static void logout_menu(void) {
     logout_user();
@@ -166,13 +204,27 @@ static void logout_menu(void) {
 
 /* ==================== 患者角色菜单 ==================== */
 
-/* 前向声明辅助函数 */
-static int registration_has_visit(Database *db, int regId);
-static int count_patient_regs_same_day_dept(Database *db, int patientId, const char *date, const char *dept);
-static int count_patient_regs_same_day(Database *db, int patientId, const char *date);
-static int read_date_with_back(const char *prompt, char *buf, int size);
+/* 
+ * 前向声明辅助函数 - 这些函数在后续定义，提前声明以便在其他函数中使用
+ */
+static int registration_has_visit(Database *db, int regId);                                          /* 检查挂号记录是否有关联的看诊记录 */
+static int count_patient_regs_same_day_dept(Database *db, int patientId, const char *date, const char *dept); /* 统计患者某天某科室的挂号次数 */
+static int count_patient_regs_same_day(Database *db, int patientId, const char *date);               /* 统计患者某天的挂号总次数 */
+static int read_date_with_back(const char *prompt, char *buf, int size);                             /* 读取日期输入，支持输入"0"返回上一步 */
 
-/* 查看个人医疗记录（合并显示挂号、看诊、检查、住院记录） */
+/*
+ * 函数：patient_view_medical_records - 患者查看个人医疗记录
+ * 
+ * 功能说明：
+ *   合并显示当前登录患者的所有医疗相关记录，包括：
+ *   - 挂号记录：显示每次挂号的时间、科室、医生和状态
+ *   - 看诊记录：显示诊断结果、检查项目和处方信息
+ *   - 检查记录：显示检查项目、费用和结果
+ *   - 住院记录：显示病房、床位、入院时间和费用等信息
+ * 
+ * 权限检查：
+ *   仅允许已登录的患者角色调用此函数
+ */
 static void patient_view_medical_records(Database *db) {
     Registration *r;
     Visit *v;
@@ -244,7 +296,30 @@ static void patient_view_medical_records(Database *db) {
     }
 }
 
-/* 患者新增挂号 */
+/*
+ * 函数：patient_add_registration - 患者新增挂号
+ * 
+ * 功能说明：
+ *   允许当前登录的患者为自己创建新的挂号记录。
+ *   采用分步输入方式，每一步都支持返回上一步重新修改。
+ * 
+ * 权限检查：
+ *   仅允许已登录的患者角色调用此函数
+ * 
+ * 流程：
+ *   1. 检查患者档案是否存在
+ *   2. 分步输入：医生工号 → 科室 → 日期 → 挂号类型
+ *   3. 每步都可输入"0"返回上一步或取消
+ *   4. 验证医生是否存在
+ *   5. 检查挂号限制：
+ *      - 同一患者同一天同一科室最多挂号 1 次
+ *      - 同一患者同一天最多挂号 3 次
+ *   6. 创建挂号记录并保存到文件
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ */
 static void patient_add_registration(Database *db, const char *dataDir) {
     Registration *r;
     int doctorId = 0;
@@ -316,7 +391,29 @@ static void patient_add_registration(Database *db, const char *dataDir) {
     printf("挂号成功，挂号编号=%d\n", r->id);
 }
 
-/* 患者取消挂号 */
+/*
+ * 函数：patient_cancel_registration - 患者取消挂号
+ * 
+ * 功能说明：
+ *   允许当前登录的患者查看并取消自己的挂号记录。
+ *   取消前会进行多项检查以确保操作合法。
+ * 
+ * 权限检查：
+ *   仅允许已登录的患者角色调用此函数
+ * 
+ * 流程：
+ *   1. 显示当前患者的所有挂号记录
+ *   2. 输入要取消的挂号编号
+ *   3. 验证挂号记录是否存在且属于当前患者
+ *   4. 检查是否已就诊（已就诊不能取消）
+ *   5. 检查是否有关联的看诊记录（有则不能取消）
+ *   6. 要求用户确认（y/n）
+ *   7. 删除记录并保存
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ */
 static void patient_cancel_registration(Database *db, const char *dataDir) {
     int id = 0;
     Registration *prev = NULL;
@@ -391,7 +488,17 @@ static void patient_cancel_registration(Database *db, const char *dataDir) {
     printf("取消成功。\n");
 }
 
-/* 患者挂号管理子菜单（包含新增和取消挂号） */
+/*
+ * 函数：patient_registration_management - 患者挂号管理子菜单
+ * 
+ * 功能说明：
+ *   提供患者挂号相关操作的子菜单，包括新增挂号和取消挂号两个功能。
+ *   循环显示菜单直到用户选择返回上级。
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ */
 static void patient_registration_management(Database *db, const char *dataDir) {
     int choice;
     while (1) {
@@ -407,7 +514,28 @@ static void patient_registration_management(Database *db, const char *dataDir) {
     }
 }
 
-/* 修改个人基本信息 */
+/*
+ * 函数：patient_edit_profile - 患者修改个人基本信息
+ * 
+ * 功能说明：
+ *   允许当前登录的患者修改自己的基本信息，包括姓名、性别、出生日期、联系电话和医保类型。
+ *   每个字段都支持直接回车保持原值，或输入"0"取消整个修改操作。
+ *   对性别、日期格式、手机号格式进行验证。
+ * 
+ * 权限检查：
+ *   仅允许已登录的患者角色调用此函数
+ * 
+ * 流程：
+ *   1. 查找当前患者的档案信息
+ *   2. 显示当前所有信息
+ *   3. 逐项询问是否修改（姓名→性别→出生日期→联系电话→医保类型）
+ *   4. 对输入进行格式验证
+ *   5. 保存修改到文件并显示更新后的信息
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ */
 static void patient_edit_profile(Database *db, const char *dataDir) {
     Patient *p;
     char newName[NAME_LEN], newGender[16], newBirth[DATE_LEN], newPhone[PHONE_LEN], newInsurance[SMALL_LEN];
@@ -529,9 +657,21 @@ static void patient_edit_profile(Database *db, const char *dataDir) {
 }
 
 /*
- * 说明：患者角色菜单函数
- * 参数：db 数据库指针
- * 参数：dataDir 数据文件存储目录（保留参数以保持一致性）
+ * 函数：patient_menu - 患者角色主菜单
+ * 
+ * 功能说明：
+ *   患者登录后的主界面，提供以下功能选项：
+ *   1. 查看个人医疗记录（挂号、看诊、检查、住院）
+ *   2. 挂号管理（新增/取消挂号）
+ *   3. 修改个人信息
+ *   0. 登出并返回登录界面
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录（保留参数以保持一致性）
+ * 
+ * 流程：
+ *   循环显示菜单，根据用户选择调用相应功能函数，直到用户选择登出
  */
 void patient_menu(Database *db, const char *dataDir) {
     int choice;
@@ -562,7 +702,19 @@ void patient_menu(Database *db, const char *dataDir) {
 
 /* ==================== 医生角色菜单 ==================== */
 
-/* 查看医生的患者挂号 */
+/*
+ * 函数：doctor_view_patients - 医生查看患者列表
+ * 
+ * 功能说明：
+ *   显示当前登录医生名下的所有挂号患者信息。
+ *   遍历挂号记录，找出属于该医生的记录，并查找对应的患者信息显示。
+ * 
+ * 权限检查：
+ *   仅允许已登录的医生角色调用此函数
+ * 
+ * 参数：
+ *   db - 数据库指针
+ */
 static void doctor_view_patients(Database *db) {
     Registration *r;
     Patient *p;
@@ -591,7 +743,26 @@ static void doctor_view_patients(Database *db) {
     }
 }
 
-/* 添加看诊记录 */
+/*
+ * 函数：doctor_add_visit - 医生添加看诊记录
+ * 
+ * 功能说明：
+ *   允许医生为属于自己名下的挂号记录添加看诊信息。
+ *   采用分步输入方式，支持返回上一步重新修改。
+ * 
+ * 权限检查：
+ *   仅允许已登录的医生角色调用此函数
+ * 
+ * 流程：
+ *   1. 输入挂号编号并验证（必须存在且属于当前医生）
+ *   2. 分步输入：诊断结果 → 检查项目 → 处方信息
+ *   3. 创建看诊记录并更新挂号状态为"已就诊"
+ *   4. 保存所有数据到文件
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ */
 static void doctor_add_visit(Database *db, const char *dataDir) {
     int regId = 0;
     int step = 0;
@@ -640,9 +811,22 @@ static void doctor_add_visit(Database *db, const char *dataDir) {
 }
 
 /*
- * 说明：医生角色菜单函数
- * 参数：db 数据库指针
- * 参数：dataDir 数据文件存储目录
+ * 函数：doctor_menu - 医生角色主菜单
+ * 
+ * 功能说明：
+ *   医生登录后的主界面，提供以下功能选项：
+ *   1. 查看我的患者 - 显示当前医生名下的所有挂号患者
+ *   2. 看诊记录管理 - 进入看诊记录子菜单（新增/删除/修改）
+ *   3. 检查记录管理 - 进入检查记录子菜单（新增/删除/修改）
+ *   4. 住院记录管理 - 进入住院记录子菜单（新增/删除/修改）
+ *   0. 登出并返回登录界面
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ * 
+ * 流程：
+ *   循环显示菜单，根据用户选择调用相应功能函数，直到用户选择登出
  */
 void doctor_menu(Database *db, const char *dataDir) {
     int choice;
@@ -674,9 +858,24 @@ void doctor_menu(Database *db, const char *dataDir) {
 /* ==================== 管理员角色菜单 ==================== */
 
 /*
- * 说明：管理员角色菜单函数
- * 参数：db 数据库指针
- * 参数：dataDir 数据文件存储目录
+ * 函数：manager_menu - 管理员角色主菜单
+ * 
+ * 功能说明：
+ *   管理员登录后的主界面，提供全院级别的管理功能：
+ *   1. 患者管理 - 查看/新增/删除/修改患者信息
+ *   2. 档案管理 - 管理患者和医生档案、关联账号
+ *   3. 药品管理 - 药品出入库、新增/删除药品
+ *   4. 全院统计报表 - 显示医院运营数据统计
+ *   5. 用户账号管理 - 管理所有用户账号
+ *   A. 导入数据文件 - 从外部目录导入数据
+ *   0. 登出并返回登录界面
+ * 
+ * 参数：
+ *   db - 数据库指针
+ *   dataDir - 数据文件存储目录
+ * 
+ * 流程：
+ *   循环显示菜单，支持数字选项和字母选项（A/a），根据用户选择调用相应功能
  */
 void manager_menu(Database *db, const char *dataDir) {
     int choice;
@@ -756,7 +955,8 @@ void manager_menu(Database *db, const char *dataDir) {
 }
 
 /* ==================== 辅助统计函数 ==================== */
-/* 统计患者总数 */
+
+/* 统计患者总数 - 遍历患者链表计算节点数量 */
 static int count_patients(Database *db) {
     int c = 0;
     Patient *p = db->patients;
@@ -766,7 +966,8 @@ static int count_patients(Database *db) {
     }
     return c;
 }
-/* 统计医生总数 */
+
+/* 统计医生总数 - 遍历医生链表计算节点数量 */
 static int count_doctors(Database *db) {
     int c = 0;
     Doctor *p = db->doctors;
@@ -776,7 +977,8 @@ static int count_doctors(Database *db) {
     }
     return c;
 }
-/* 统计挂号记录总数 */
+
+/* 统计挂号记录总数 - 遍历挂号链表计算节点数量 */
 static int count_regs(Database *db) {
     int c = 0;
     Registration *p = db->registrations;
@@ -786,7 +988,8 @@ static int count_regs(Database *db) {
     }
     return c;
 }
-/* 统计住院患者总数 */
+
+/* 统计住院患者总数 - 遍历住院链表计算节点数量 */
 static int count_inpatients(Database *db) {
     int c = 0;
     Inpatient *p = db->inpatients;
@@ -796,7 +999,8 @@ static int count_inpatients(Database *db) {
     }
     return c;
 }
-/* 统计药品总数 */
+
+/* 统计药品总数 - 遍历药品链表计算节点数量 */
 static int count_drugs(Database *db) {
     int c = 0;
     Drug *p = db->drugs;
@@ -807,11 +1011,21 @@ static int count_drugs(Database *db) {
     return c;
 }
 /*
- * 说明：读取一行输入，支持输入"0"返回上一步
- * 参数：prompt 提示信息
- * 参数：buf 存储输入的缓冲区
- * 参数：size 缓冲区大小
- * 返回值：1 表示成功读取，0 表示用户选择返回
+ * 函数：read_line_or_back - 读取字符串输入，支持返回上一步
+ * 
+ * 功能说明：
+ *   封装了 read_line 函数，增加了对"0"输入的特殊处理。
+ *   当用户输入"0"时，表示希望返回上一步操作，函数返回 0。
+ *   否则返回 1 表示成功读取了有效输入。
+ * 
+ * 参数：
+ *   prompt - 显示给用户的提示信息
+ *   buf - 存储输入的缓冲区
+ *   size - 缓冲区大小
+ * 
+ * 返回值：
+ *   1 - 成功读取有效输入（非"0"）
+ *   0 - 用户输入"0"选择返回上一步
  */
 int read_line_or_back(const char *prompt, char *buf, int size) {
     read_line(prompt, buf, size);
@@ -821,7 +1035,13 @@ int read_line_or_back(const char *prompt, char *buf, int size) {
     return 1;
 }
 
-/* 读取性别输入并验证，支持输入"0"返回上一步 */
+/* 
+ * 函数：read_gender_with_back - 读取性别输入并验证，支持返回上一步
+ * 
+ * 功能说明：
+ *   循环读取用户输入的性别，调用 validate_gender 验证是否为"男"或"女"。
+ *   输入"0"可返回上一步。
+ */
 static int read_gender_with_back(const char *prompt, char *buf, int size) {
     char temp[256];
     while (1) {
