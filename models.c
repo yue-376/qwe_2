@@ -47,21 +47,22 @@
  *   3. 然后将头指针移动到下一个节点（head = head->next）
  *   4. 最后释放临时变量 t 指向的节点
  *   
- *   使用临时变量的原因：如果直接 free(head)，将无法访问 head->next，
- *   会导致链表断裂，后续节点无法释放，造成内存泄漏。
+ *   使用临时变量的必要性：
+ *   - free(head) 会释放 head 指向的内存区域，使其成为无效指针
+ *   - 在释放前必须先保存 head->next 的值，以便继续遍历链表的剩余部分
+ *   - 临时变量 t 保存了待释放节点的地址，而 head 已更新为下一个节点
  * 
  * 内存管理提示：
  *   - 每个 Patient 节点都是通过 malloc() 动态分配的
  *   - 释放后这些内存会归还给系统，不能再访问
- *   - 释放完成后，链表头指针仍然指向原来的位置（成为悬空指针），
- *     所以调用此函数后应该将头指针设为 NULL
+ *   - 释放完成后，调用者应将链表头指针设为 NULL，避免悬空指针
  */
 void free_patients(Patient *head)
 {
     while (head)
     {
-        Patient *t = head;      /* 保存当前节点地址，防止丢失 */
-        head = head->next;      /* 先移动到下一个节点，因为当前节点马上要被释放了 */
+        Patient *t = head;      /* 保存当前节点地址 */
+        head = head->next;      /* 移动到下一个节点 */
         free(t);                /* 释放当前节点占用的内存 */
     }
 }
@@ -90,7 +91,7 @@ void free_doctors(Doctor *head)
  * 函数：free_regs - 释放挂号记录链表所有节点
  * 
  * 功能说明：
- *   遍历并释放所有挂号记录节点。挂号记录是患者就诊的第一步，
+ *   遍历并释放所有挂号记录节点。挂号记录是患者就诊流程的起始环节，
  *   包含患者 ID、医生 ID、科室、日期、类型和状态等信息。
  * 
  * 参数：
@@ -298,7 +299,7 @@ void init_database(Database *db)
  * 
  * 释放顺序说明：
  *   按照数据结构定义的顺序依次释放，理论上顺序不重要，
- *   因为各链表之间是独立的（节点间没有交叉引用）。
+ *   各链表之间是独立的（节点间没有交叉引用），释放顺序不影响结果。
  *   
  * 重要提示：
  *   - 此函数只释放内存，不删除磁盘上的数据文件
@@ -432,14 +433,14 @@ Account *authenticate_user(Database *db, const char *username, const char *passw
  */
 int create_account(Database *db, const char *username, const char *password, UserRole role, int linkedId)
 {
-    /* 第一步：检查用户名是否已被占用 */
+    /* 步骤 1：检查用户名是否已被占用 */
     /* 用户名必须唯一，不能重复注册 */
     if (find_account(db, username) != NULL)
     {
         return 0;  /* 用户名已存在，返回失败 */
     }
     
-    /* 第二步：为新账号分配内存 */
+    /* 步骤 2：为新账号分配内存 */
     /* malloc 会从堆区分配一块指定大小的内存 */
     Account *newAcc = (Account *)malloc(sizeof(Account));
     if (!newAcc)
@@ -447,7 +448,7 @@ int create_account(Database *db, const char *username, const char *password, Use
         return 0;  /* 内存分配失败（系统内存不足），返回失败 */
     }
     
-    /* 第三步：初始化账号的各个字段 */
+    /* 步骤 3：初始化账号的各个字段 */
     /* 使用 strncpy 而不是 strcpy，防止缓冲区溢出 */
     /* sizeof(newAcc->username) - 1 确保留出空间给结尾的 '\\0' */
     strncpy(newAcc->username, username, sizeof(newAcc->username) - 1);
