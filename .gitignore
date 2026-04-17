@@ -1,1 +1,26 @@
-Nothing should be ignored based on the provided file changes. The only modified file is 'common.c', which is a source code file and should not be added to .gitignore.
+```
+# Compiled and build artifacts
+*.o
+*.obj
+*.out
+
+# Dependencies
+*.a
+*.so
+*.dll
+*.exe
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+```
