@@ -389,7 +389,7 @@ Account *authenticate_user(Database *db, const char *username, const char *passw
 {
     /* 先根据用户名查找账号 */
     Account *acc = find_account(db, username);
-    /* 如果账号存在且密码匹配，则认证成功 */
+    /* 账号存在且密码匹配时返回账号指针，否则返回 NULL */
     if (acc && strcmp(acc->password, password) == 0)
     {
         return acc;  /* 返回账号信息，供调用者设置会话 */

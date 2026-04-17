@@ -45,15 +45,15 @@
  *   printf("您本次住院总费用：%.2f 元\n", total);
  */
 double inpatient_total_cost(Database *db, int patientId) {
-    double s = 0;  /* 累计金额变量，初始金额是 0 */
-    Inpatient *p = db->inpatients;  /* 从住院链表头开始遍历 */
-    while (p) {  /* 只要还有记录（p 不是 NULL），就继续循环 */
-        if (p->patientId == patientId) {  /* 检查这条记录是不是该患者的 */
-            s += p->totalCost;  /* 如果是，就把费用加到总金额里 */
+    double s = 0;  /* 累计金额变量，初始值为 0 */
+    Inpatient *p = db->inpatients;  /* 从住院链表头指针开始遍历 */
+    while (p) {  /* 当 p 不为 NULL 时继续循环，表示还有记录未处理 */
+        if (p->patientId == patientId) {  /* 判断当前记录的 patientId 是否等于目标患者 ID */
+            s += p->totalCost;  /* 匹配时将当前记录的总费用累加到 s */
         }
-        p = p->next;  /* 移动到下一条记录 */
+        p = p->next;  /* 移动到链表中的下一条记录 */
     }
-    return s;  /* 返回计算好的总费用 */
+    return s;  /* 返回计算得到的总费用 */
 }
 
 /*
