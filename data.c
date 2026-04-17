@@ -624,7 +624,7 @@ static void load_accounts(Database *db, const char *path)
     {
         Account *p = (Account *)malloc(sizeof(Account));
         int roleVal;
-        // 格式：username|password|role|linkedId
+        /* 数据格式：用户名 | 密码 | 角色 | 关联 ID */
         if (sscanf(line, "%31[^|]|%63[^|]|%d|%d", p->username, p->password, &roleVal, &p->linkedId) == 4)
         {
             p->role = (UserRole)roleVal;
