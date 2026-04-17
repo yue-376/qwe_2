@@ -82,14 +82,14 @@ int check_permission(UserRole requiredRole)
     }
     
     /* 第二步：管理员拥有所有权限，这是系统的特殊规则 */
-    /* 不管 requiredRole 是什么（患者、医生、管理员），只要是管理员就放行 */
+    /* 管理员角色 (ROLE_MANAGER) 可以访问任何需要特定角色的功能 */
     if (g_session.role == ROLE_MANAGER)
     {
         return 1;  /* 返回 1 表示"有权限" */
     }
     
     /* 第三步：普通用户必须角色完全匹配才有权限 */
-    /* 如果当前用户是医生，但需要的是患者权限，也会拒绝 */
+    /* 角色不匹配时返回 0 表示无权限，例如医生角色访问患者专属功能会被拒绝 */
     return g_session.role == requiredRole;
 }
 

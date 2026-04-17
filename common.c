@@ -13,16 +13,25 @@
 #include "common.h"
 
 /*
- * 说明：去除字符串末尾的换行符
- * 参数：s 要处理的字符串
+ * 函数：trim_newline - 去除字符串末尾的换行符
+ * 参数：s - 待处理的字符串指针
+ * 返回：无
  *
- * 处理流程：
- * 1. 检查指针是否为空（防止程序崩溃）
- * 2. 从字符串末尾开始，删除所有的 '\n' 和 '\r' 字符
+ * 功能描述：
+ * 该函数用于移除字符串末尾的所有换行符（'\n'）和回车符（'\r'）。
+ * 在使用 fgets() 函数读取用户输入时，输入缓冲区中的换行符会被一并读入，
+ * 当用户输入"张三"后按下回车键，fgets() 实际读取的内容为"张三\n"。
+ * 调用此函数后，字符串将变为"张三"，便于后续处理和比较操作。
  *
- * 函数用途：
- * fgets() 读取用户输入时会包含换行符，例如输入"张三"后按回车，
- * fgets 会读入"张三\n"。此函数移除末尾的换行符，保留"张三"。
+ * 处理逻辑：
+ * 1. 首先检查输入指针是否为空，避免空指针解引用导致程序崩溃
+ * 2. 获取字符串长度，从末尾开始向前遍历
+ * 3. 连续删除末尾的'\n'和'\r'字符，直到遇到其他字符或字符串开头
+ *
+ * 使用场景：
+ * - 处理 fgets() 读取的用户输入
+ * - 清理文件读取的文本行
+ * - 标准化字符串数据格式
  */
 void trim_newline(char *s)
 {
@@ -64,7 +73,7 @@ void clear_input_buffer(void)
  * 参数：size 缓冲区大小
  * 
  * 处理流程：
- * 1. 如果提供了提示信息，则显示它（比如"请输入姓名："）
+ * 1. 如果提供了提示信息，则显示它（如"请输入姓名："）
  * 2. 使用 fgets 读取一行输入（包括回车键）
  * 3. 去除末尾的换行符（调用 trim_newline 函数）
  * 
@@ -75,7 +84,7 @@ void clear_input_buffer(void)
  * 使用示例：
  *   char name[50];
  *   read_line("请输入您的姓名：", name, sizeof(name));
- *   // 用户输入"张三"后，name 里就是"张三"（没有换行符）
+ *   /* 用户输入"张三"并按回车后，name 中的内容为"张三"（不含换行符） */
  */
 void read_line(const char *prompt, char *buf, int size)
 {
@@ -102,7 +111,7 @@ void read_line(const char *prompt, char *buf, int size)
  * 使用示例：
  *   char smallBuf[10];
  *   safe_copy(smallBuf, "这是一个很长的字符串", sizeof(smallBuf));
- *   // smallBuf 里会是"这是一个很"（自动截断，不会溢出）
+ *   /* smallBuf 中的内容为截断后的字符串，且以空字符结尾，不会发生缓冲区溢出 */
  */
 void safe_copy(char *dst, const char *src, size_t n)
 {
@@ -138,7 +147,7 @@ int validate_gender(const char *gender)
  * 返回值：1 表示有效，0 表示无效
  * 
  * 验证规则：
- * 1. 长度必须为 10 个字符（比如"2024-01-15"正好 10 个字符）
+ * 1. 长度必须为 10 个字符（如"2024-01-15"正好 10 个字符）
  * 2. 格式必须为 YYYY-MM-DD（第 5 和第 8 位必须是'-'连字符）
  * 3. 其他位置必须是数字（不能是字母或其他符号）
  * 4. 年份范围：1900-2100（太早或太晚的日期都不接受）
@@ -253,7 +262,7 @@ int validate_phone(const char *phone)
  * 3. 调用验证函数检查输入合法性
  * 4. 验证通过则保存到 buf 并返回 1
  * 5. 验证失败则显示错误信息并重新读取
- *   // 到这里 gender 里已经是验证过的有效值了
+ *   /* 此时 buf 中已保存验证通过的有效值 */
  */
 int read_line_with_validate(const char *prompt, char *buf, int size, 
                             int (*validate_func)(const char *), 
@@ -298,7 +307,7 @@ int read_line_with_validate(const char *prompt, char *buf, int size,
  * 特点：
  * - 返回值保证在指定范围内，调用者无需再次验证
  * - 支持负数范围（如 -10 到 10）
- *   // 到这里 age 一定是一个 1~150 之间的有效整数
+ *   /* 返回值保证在 min 到 max 范围内 */
  */
 int read_int(const char *prompt, int min, int max)
 {
