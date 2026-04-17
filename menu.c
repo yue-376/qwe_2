@@ -2561,7 +2561,7 @@ void user_account_management_menu(Database *db, const char *dataDir)
                     if (prev)
                         prev->next = acc->next;
                 }
-                // 只释放当前节点，不要调用 free_accounts 因为它会释放整个后续链表
+                // 只释放当前节点，不要调用 free_accounts 该函数会释放整个后续链表
                 free(acc);
                 printf("账号 %s 已删除！\n", username);
                 save_all(db, dataDir);
