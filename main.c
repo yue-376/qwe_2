@@ -11,7 +11,7 @@
  * - 程序退出时释放资源，把动态分配的内存归还给系统，避免内存泄漏
  */
 
-#include "menu.h"
+#include "menu_business.h"
 #include <stdio.h>
 
 #ifndef _WIN32
