@@ -84,7 +84,7 @@ void clear_input_buffer(void)
  * 使用示例：
  *   char name[50];
  *   read_line("请输入您的姓名：", name, sizeof(name));
- *   /* 用户输入"张三"并按回车后，name 中的内容为"张三"（不含换行符） */
+ *   // 用户输入"张三"并按回车后，name 中的内容为"张三"（不含换行符）
  */
 void read_line(const char *prompt, char *buf, int size)
 {
@@ -111,7 +111,7 @@ void read_line(const char *prompt, char *buf, int size)
  * 使用示例：
  *   char smallBuf[10];
  *   safe_copy(smallBuf, "这是一个很长的字符串", sizeof(smallBuf));
- *   /* smallBuf 中的内容为截断后的字符串，且以空字符结尾，不会发生缓冲区溢出 */
+ *   // smallBuf 中的内容为截断后的字符串，且以空字符结尾，不会发生缓冲区溢出
  */
 void safe_copy(char *dst, const char *src, size_t n)
 {
@@ -262,7 +262,6 @@ int validate_phone(const char *phone)
  * 3. 调用验证函数检查输入合法性
  * 4. 验证通过则保存到 buf 并返回 1
  * 5. 验证失败则显示错误信息并重新读取
- *   /* 此时 buf 中已保存验证通过的有效值 */
  */
 int read_line_with_validate(const char *prompt, char *buf, int size, 
                             int (*validate_func)(const char *), 
@@ -307,7 +306,6 @@ int read_line_with_validate(const char *prompt, char *buf, int size,
  * 特点：
  * - 返回值保证在指定范围内，调用者无需再次验证
  * - 支持负数范围（如 -10 到 10）
- *   /* 返回值保证在 min 到 max 范围内 */
  */
 int read_int(const char *prompt, int min, int max)
 {
@@ -331,7 +329,6 @@ int read_int(const char *prompt, int min, int max)
 }
 
 /*
-/*
  * 说明：暂停程序，等待用户按回车键继续
  *
  * 函数用途：
@@ -341,7 +338,6 @@ int read_int(const char *prompt, int min, int max)
  * 使用场景：
  * - 显示长列表或详细信息后，给用户时间阅读
  * - 执行重要操作前，等待用户确认已准备好
- */
  */
 void pause_and_wait(void)
 {
