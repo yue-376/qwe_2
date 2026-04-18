@@ -1,7 +1,1 @@
-```
-# Compiled and binary files
-*.exe
-*.o
-*.obj
-*.out
-```
+Nothing should be ignored based on the provided file changes. The only added file is `menu_business_new.c`, which is a source code file and should not be ignored.
