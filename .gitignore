@@ -1,1 +1,7 @@
-Nothing should be ignored in this case, as the changes only include C source files (.c, .h) which are legitimate source code files that should be tracked by git. No build artifacts, dependencies, or temporary files are present in the change list.
+```
+# Compiled and binary files
+*.exe
+*.o
+*.obj
+*.out
+```
