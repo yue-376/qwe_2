@@ -1254,9 +1254,3 @@ static void edit_inpatient(Database *db, const char *dataDir) {
     save_all(db, dataDir);
     printf("\n住院记录修改成功！\n");
 }
-
-/* ==================== 挂号管理子菜单 ==================== */
-/*
- * 说明：挂号管理子菜单
- * 参数：db 数据库指针
- */
