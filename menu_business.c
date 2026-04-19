@@ -698,6 +698,11 @@ void patient_menu(Database *db, const char *dataDir) {
                 return;
         }
     }
+}
+
+/*
+ * 说明：挂号管理子菜单
+ * 参数：db 数据库指针
  * 参数：dataDir 数据文件目录
  */
 static void registration_management_menu(Database *db, const char *dataDir) {
