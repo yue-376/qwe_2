@@ -447,3 +447,31 @@ void print_utf8_cell_fit(const char *s, int colWidth)
         width++;
     }
 }
+
+/*
+ * 说明：读取指定范围内的浮点数
+ * 参数：prompt 提示信息
+ * 参数：minv 最小值
+ * 参数：maxv 最大值
+ * 返回值：有效的浮点数值
+ */
+double read_double(const char *prompt, double minv, double maxv)
+{
+    char line[64];
+    char *end;
+    double value;
+    while (1)
+    {
+        read_line(prompt, line, sizeof(line));
+        if (strlen(line) == 0) {
+            printf("输入不能为空，请输入 %.2f ~ %.2f 的数字。\n", minv, maxv);
+            continue;
+        }
+        value = strtod(line, &end);
+        if (*line != '\0' && *end == '\0' && value >= minv && value <= maxv)
+        {
+            return value;
+        }
+        printf("输入无效，请输入 %.2f ~ %.2f 的数字。\n", minv, maxv);
+    }
+}
