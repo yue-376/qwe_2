@@ -698,3 +698,473 @@ void patient_menu(Database *db, const char *dataDir) {
                 return;
         }
     }
+ * 参数：dataDir 数据文件目录
+ */
+static void registration_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 挂号管理 ---\n");
+        printf("1. 新增挂号记录\n");
+        printf("2. 删除挂号记录\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 2);
+        if (choice == 0) return;
+        if (choice == 1) add_registration(db, dataDir);
+        else delete_registration(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：看诊管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void visit_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 看诊记录管理 ---\n");
+        printf("1. 新增看诊记录\n");
+        printf("2. 删除看诊记录\n");
+        printf("3. 修改看诊记录\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 3);
+        if (choice == 0) return;
+        if (choice == 1) add_visit(db, dataDir);
+        else if (choice == 2) delete_visit(db, dataDir);
+        else if (choice == 3) edit_visit(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：检查管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void exam_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 检查记录管理 ---\n");
+        printf("1. 新增检查记录\n");
+        printf("2. 删除检查记录\n");
+        printf("3. 修改检查记录\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 3);
+        if (choice == 0) return;
+        if (choice == 1) add_exam(db, dataDir);
+        else if (choice == 2) delete_exam(db, dataDir);
+        else if (choice == 3) edit_exam(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：住院管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+static void inpatient_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 住院记录管理 ---\n");
+        printf("1. 新增住院记录\n");
+        printf("2. 删除住院记录\n");
+        printf("3. 修改住院记录\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 3);
+        if (choice == 0) return;
+        if (choice == 1) add_inpatient(db, dataDir);
+        else if (choice == 2) delete_inpatient(db, dataDir);
+        else if (choice == 3) edit_inpatient(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：患者管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+void patient_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 患者管理 ---\n");
+        printf("1. 查看患者列表\n");
+        printf("2. 新增患者\n");
+        printf("3. 删除患者\n");
+        printf("4. 修改患者\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 4);
+        if (choice == 0) return;
+        if (choice == 1) list_patients(db);
+        else if (choice == 2) add_patient(db, dataDir);
+        else if (choice == 3) delete_patient(db, dataDir);
+        else if (choice == 4) edit_patient(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/* ==================== 档案管理菜单 ==================== */
+/*
+ * 说明：档案管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+void archive_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 档案管理 ---\n");
+        printf("1. 新增档案（患者/医生）\n");
+        printf("2. 修改档案（患者/医生）\n");
+        printf("3. 删除档案（患者/医生）\n");
+        printf("4. 关联账号\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择：", 0, 4);
+        if (choice == 0) return;
+        else if (choice == 1) add_archive(db, dataDir);
+        else if (choice == 2) edit_archive(db, dataDir);
+        else if (choice == 3) delete_archive(db, dataDir);
+        else if (choice == 4) link_archive_to_account(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：药品出入库操作
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 读取药品编号并验证是否存在
+ * 2. 读取操作类型（入库/出库）
+ * 3. 读取数量（出库时检查库存是否充足）
+ * 4. 读取操作人和日期
+ * 5. 创建出入库日志并更新库存
+ */
+static void drug_inout(Database *db, const char *dataDir) {
+    Drug *d = NULL;
+    DrugLog *l;
+    int drugId = 0, qty = 0;
+    int step = 0;
+    char op[SMALL_LEN], operatorName[NAME_LEN], date[DATE_LEN];
+    while (step < 5) {
+        int ok = 0;
+        if (step == 0) {
+            ok = read_int_or_back("药品编号(输入0返回上一步): ", 1, 1000000, &drugId);
+            if (ok) {
+                d = find_drug(db, drugId);
+                if (!d) { printf("药品不存在。\n"); ok = 0; }
+            }
+        } else if (step == 1) {
+            ok = read_line_or_back("操作类型(入库/出库，输入0返回上一步): ", op, sizeof(op));
+            if (ok && strcmp(op, "入库") != 0 && strcmp(op, "出库") != 0) {
+                printf("操作类型仅支持“入库”或“出库”。\n");
+                ok = 0;
+            }
+        } else if (step == 2) {
+            ok = read_int_or_back("数量(输入0返回上一步): ", 1, 1000000, &qty);
+            if (ok && strcmp(op, "出库") == 0 && d->stock < qty) {
+                printf("库存不足。\n");
+                ok = 0;
+            }
+        } else if (step == 3) ok = read_line_or_back("操作人(输入0返回上一步): ", operatorName, sizeof(operatorName));
+        else ok = read_date_with_back("日期 (YYYY-MM-DD，输入 0 返回上一步): ", date, sizeof(date));
+
+        if (ok) step++;
+        else if (step == 0) { printf("已返回上一步。\n"); return; }
+        else { printf("已返回上一项输入。\n"); step--; }
+    }
+
+    l = (DrugLog*)malloc(sizeof(DrugLog));
+    l->id = next_druglog_id(db);
+    l->drugId = drugId;
+    strcpy(l->operation, op);
+    l->quantity = qty;
+    strcpy(l->operatorName, operatorName);
+    strcpy(l->date, date);
+    if (strcmp(op, "出库") == 0) d->stock -= qty; else d->stock += qty;
+    l->next = NULL;
+    if (!db->drugLogs) db->drugLogs = l; else { DrugLog *q = db->drugLogs; while (q->next) q = q->next; q->next = l; }
+    save_all(db, dataDir);
+    printf("操作成功，当前库存=%d\n", d->stock);
+}
+
+/*
+ * 说明：添加新药品
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 逐步读取通用名、商品名、别名、类别、所属科室、单价、初始库存
+ * 2. 创建药品记录并保存
+ */
+static void add_drug(Database *db, const char *dataDir) {
+    Drug *d = (Drug*)malloc(sizeof(Drug));
+    int step = 0;
+    char priceBuf[64], stockBuf[64];
+    d->id = next_drug_id(db);
+    while (step < 7) {
+        int ok = 0;
+        if (step == 0) ok = read_line_or_back("通用名(输入0返回上一步): ", d->genericName, sizeof(d->genericName));
+        else if (step == 1) ok = read_line_or_back("商品名(输入0返回上一步): ", d->brandName, sizeof(d->brandName));
+        else if (step == 2) ok = read_line_or_back("别名(输入0返回上一步): ", d->alias, sizeof(d->alias));
+        else if (step == 3) ok = read_line_or_back("类别(输入0返回上一步): ", d->type, sizeof(d->type));
+        else if (step == 4) ok = read_line_or_back("所属科室(输入0返回上一步): ", d->dept, sizeof(d->dept));
+        else if (step == 5) {
+            ok = read_line_or_back("单价(输入0返回上一步): ", priceBuf, sizeof(priceBuf));
+            if (ok) d->price = atof(priceBuf);
+        } else {
+            ok = read_line_or_back("初始库存(输入0返回上一步): ", stockBuf, sizeof(stockBuf));
+            if (ok) d->stock = atoi(stockBuf);
+        }
+
+        if (ok) step++;
+        else if (step == 0) { printf("已返回上一步。\n"); free(d); return; }
+        else { printf("已返回上一项输入。\n"); step--; }
+    }
+    d->next = NULL;
+    if (!db->drugs) db->drugs = d; else { Drug *q = db->drugs; while (q->next) q = q->next; q->next = d; }
+    save_all(db, dataDir);
+    printf("药品新增成功，药品编号=%d\n", d->id);
+}
+
+/*
+ * 说明：删除药品记录
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ * 
+ * 流程：
+ * 1. 读取要删除的药品编号
+ * 2. 检查是否有出入库日志记录
+ * 3. 确认后删除并保存
+ */
+static void delete_drug(Database *db, const char *dataDir) {
+    int id = read_int("要删除的药品编号(输入0返回): ", 0, 1000000);
+    Drug *prev = NULL;
+    Drug *cur = db->drugs;
+    char confirm[16];
+    if (id == 0) { printf("已返回上一步。\n"); return; }
+    while (cur && cur->id != id) {
+        prev = cur;
+        cur = cur->next;
+    }
+    if (!cur) { printf("药品不存在。\n"); return; }
+    if (drug_has_logs(db, id)) {
+        printf("删除失败：该药品已有出入库记录，无法直接删除。\n");
+        return;
+    }
+    printf("确认删除药品[%d] %s/%s ? (y/n): ", cur->id, cur->genericName, cur->brandName);
+    read_line(NULL, confirm, sizeof(confirm));
+    if (!(confirm[0] == 'y' || confirm[0] == 'Y')) { printf("已取消删除。\n"); return; }
+    if (prev) prev->next = cur->next; else db->drugs = cur->next;
+    free(cur);
+    save_all(db, dataDir);
+    printf("删除成功。\n");
+}
+
+/*
+ * 说明：药品管理子菜单
+ * 参数：db 数据库指针
+ * 参数：dataDir 数据文件目录
+ */
+void drug_management_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n--- 药品管理 ---\n");
+        printf("1. 药品出入库\n");
+        printf("2. 新增药品\n");
+        printf("3. 删除药品\n");
+        printf("0. 返回上级菜单\n");
+        choice = read_int("请选择: ", 0, 3);
+        if (choice == 0) return;
+        if (choice == 1) drug_inout(db, dataDir);
+        else if (choice == 2) add_drug(db, dataDir);
+        else delete_drug(db, dataDir);
+        pause_and_wait();
+    }
+}
+
+/*
+ * 说明：患者视角报表 - 显示患者完整就诊记录
+ * 参数：db 数据库指针
+ */
+static void patient_report(Database *db) {
+    int pid = read_int("输入患者病历号(输入0返回): ", 0, 1000000);
+    Patient *p = find_patient(db, pid);
+    Registration *r;
+    Exam *e;
+    Inpatient *ip;
+    if (pid == 0) { printf("已返回上一步。\n"); return; }
+    if (!p) { printf("患者不存在。\n"); return; }
+    printf("\n患者: %s(%d) %s %s %s %s\n", p->name, p->id, p->gender, p->birth, p->phone, p->insurance);
+    printf("挂号记录:\n");
+    for (r = db->registrations; r; r = r->next) if (r->patientId == pid) printf("  [%d] %s %s 医生%d %s %s\n", r->id, r->date, r->dept, r->doctorId, r->type, r->status);
+    printf("检查记录:\n");
+    for (e = db->exams; e; e = e->next) if (e->patientId == pid) printf("  [%d] %s %s %.2f %s\n", e->id, e->code, e->itemName, e->fee, e->result);
+    printf("住院记录:\n");
+    for (ip = db->inpatients; ip; ip = ip->next) if (ip->patientId == pid) printf("  [%d] 病房%d 床位%d %s ~ %s 费用%.2f\n", ip->id, ip->wardId, ip->bedNo, ip->admitDate, ip->expectedDischarge, ip->totalCost);
+}
+
+/*
+ * 说明：医生视角报表 - 显示医生工作统计
+ * 参数：db 数据库指针
+ */
+static void doctor_report(Database *db) {
+    int did = read_int("输入医生工号(输入0返回): ", 0, 1000000);
+    Doctor *d = find_doctor(db, did);
+    Registration *r; int count = 0;
+    if (did == 0) { printf("已返回上一步。\n"); return; }
+    if (!d) { printf("医生不存在。\n"); return; }
+    printf("\n医生: %s(%d) %s %s\n", d->name, d->id, d->dept, d->title);
+    for (r = db->registrations; r; r = r->next) {
+        if (r->doctorId == did) {
+            printf("  挂号[%d] 患者%d %s %s %s\n", r->id, r->patientId, r->date, r->type, r->status);
+            count++;
+        }
+    }
+    printf("总接诊/挂号关联数量: %d\n", count);
+}
+
+/*
+ * 说明：管理视角报表 - 显示全院运营数据统计
+ * 参数：db 数据库指针
+ */
+void management_report(Database *db) {
+    Ward *w; Drug *d; Inpatient *ip; Exam *e;
+    double wardRate, inpatientIncome = 0, examIncome = 0;
+    int totalBeds = 0, usedBeds = 0;
+    char idBuf[32], stockBuf[32], priceBuf[32];
+    for (w = db->wards; w; w = w->next) { totalBeds += w->bedCount; usedBeds += w->occupiedBeds; }
+    for (ip = db->inpatients; ip; ip = ip->next) inpatientIncome += ip->totalCost;
+    for (e = db->exams; e; e = e->next) examIncome += e->fee;
+    wardRate = totalBeds ? (usedBeds * 100.0 / totalBeds) : 0;
+    printf("\n=== 管理视角报表 ===\n");
+    printf("患者总数: %d\n", count_patients(db));
+    printf("医生总数: %d\n", count_doctors(db));
+    printf("挂号记录总数: %d\n", count_regs(db));
+    printf("住院人数: %d\n", count_inpatients(db));
+    printf("药品种类: %d\n", count_drugs(db));
+    printf("床位利用率: %.2f%%\n", wardRate);
+    printf("住院费用汇总: %.2f\n", inpatientIncome);
+    printf("检查费用汇总: %.2f\n", examIncome);
+    printf("药品库存盘点(全部):\n");
+    printf("+------+--------------------+--------------------+--------+----------+------------+\n");
+    printf("| ");
+    print_utf8_cell("ID", 4); putchar(' ');
+    printf("| ");
+    print_utf8_cell("通用名", 18); putchar(' ');
+    printf("| ");
+    print_utf8_cell("商品名", 18); putchar(' ');
+    printf("| ");
+    print_utf8_cell("库存", 6); putchar(' ');
+    printf("| ");
+    print_utf8_cell("单价", 8); putchar(' ');
+    printf("| ");
+    print_utf8_cell("科室", 10); putchar(' ');
+    printf("|\n");
+    printf("+------+--------------------+--------------------+--------+----------+------------+\n");
+    for (d = db->drugs; d; d = d->next) {
+        snprintf(idBuf, sizeof(idBuf), "%d", d->id);
+        snprintf(stockBuf, sizeof(stockBuf), "%d", d->stock);
+        snprintf(priceBuf, sizeof(priceBuf), "%.2f", d->price);
+        printf("| ");
+        print_utf8_cell_fit(idBuf, 4); putchar(' ');
+        printf("| ");
+        print_utf8_cell_fit(d->genericName, 18); putchar(' ');
+        printf("| ");
+        print_utf8_cell_fit(d->brandName, 18); putchar(' ');
+        printf("| ");
+        print_utf8_cell_fit(stockBuf, 6); putchar(' ');
+        printf("| ");
+        print_utf8_cell_fit(priceBuf, 8); putchar(' ');
+        printf("| ");
+        print_utf8_cell_fit(d->dept, 10); putchar(' ');
+        printf("|\n");
+    }
+    printf("+------+--------------------+--------------------+--------+----------+------------+\n");
+}
+
+/*
+ * 说明：系统主菜单 - 显示所有功能模块并处理用户选择
+ * 参数：db 数据库指针，包含所有业务数据
+ * 参数：dataDir 数据文件存储目录路径
+ * 功能：
+ *   1. 显示主菜单选项（患者管理、挂号管理、看诊管理、检查管理、住院管理、药品管理、各类报表）
+ *   2. 支持导入外部数据文件功能（选项A）
+ *   3. 根据用户选择调用对应的子菜单或功能函数
+ *   4. 选择0时保存所有数据并退出程序
+ *   5. 循环执行直到用户选择退出
+ */
+void main_menu(Database *db, const char *dataDir) {
+    int choice;
+    while (1) {
+        printf("\n==============================\n");
+        printf("  医疗综合管理系统 HIS\n");
+        printf("==============================\n");
+        printf("1. 患者管理\n");
+        printf("2. 挂号管理\n");
+        printf("3. 看诊管理\n");
+        printf("4. 检查管理\n");
+        printf("5. 住院管理\n");
+        printf("6. 药品管理\n");
+        printf("7. 患者视角查询\n");
+        printf("8. 医护视角查询\n");
+        printf("9. 管理视角报表\n");
+        printf("0. 保存并退出\n");
+        printf("A. 导入数据文件\n");
+        printf("请选择：");
+        
+        char input[32];
+        read_line("", input, sizeof(input));
+        
+        if (strlen(input) == 0) {
+            continue;
+        }
+        
+        if (strcmp(input, "A") == 0 || strcmp(input, "a") == 0) {
+            char importDir[256];
+            printf("请输入要导入的数据文件所在目录：");
+            read_line("", importDir, sizeof(importDir));
+            
+            if (strlen(importDir) > 0) {
+                int count = import_all(db, importDir);
+                if (count > 0) {
+                    printf("成功从 %s 导入了 %d 个数据文件。\n", importDir, count);
+                    save_all(db, dataDir);
+                    printf("数据已合并保存到当前数据库。\n");
+                } else {
+                    printf("未找到任何数据文件，请检查目录路径。\n");
+                }
+            } else {
+                printf("取消导入操作。\n");
+            }
+            pause_and_wait();
+            continue;
+        }
+        
+        choice = atoi(input);
+        
+        // 验证输入是否为有效数字选项 (0-9)
+        if (choice < 0 || choice > 9) {
+            printf("无效的选择，请输入 0-9 或 A。\n");
+            pause_and_wait();
+            continue;
+        }
+        
+        switch (choice) {
+            case 1: patient_management_menu(db, dataDir); break;
+            case 2: registration_management_menu(db, dataDir); break;
+            case 3: visit_management_menu(db, dataDir); break;
+            case 4: exam_management_menu(db, dataDir); break;
+            case 5: inpatient_management_menu(db, dataDir); break;
+            case 6: drug_management_menu(db, dataDir); break;
+            case 7: patient_report(db); pause_and_wait(); break;
+            case 8: doctor_report(db); pause_and_wait(); break;
+            case 9: management_report(db); pause_and_wait(); break;
+            case 0: save_all(db, dataDir); printf("数据已保存。\n"); return;
+        }
+    }
+}
+
+/* ==================== 用户账号管理菜单 ==================== */
